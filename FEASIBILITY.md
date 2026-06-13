@@ -107,7 +107,12 @@ is effectively a smooth gradient.
 ### Notes for the reader
 - `screenshots/dark.png`, `screenshots/light.png` were produced by the app's own headless
   capture path (`MARTIAN_SHOT=<path> [MARTIAN_LIGHT=1] cargo run`), which renders a few frames,
-  saves a PNG via `ViewportCommand::Screenshot`, and exits. (On macOS the process throws a
-  benign `NSException` *after* the file is written, during window teardown.)
+  saves a PNG via `ViewportCommand::Screenshot`, and exits.
+- **macOS exit crash (handled):** winit on macOS can throw an uncaught `NSRangeException`
+  while tearing down the window's responder chain on quit — it tries to remove an automatic
+  Touch Bar KVO observer (`_NSTouchBarFinderObservation` on the `nextResponder` key path) that
+  was never registered. It's an upstream AppKit/winit bug, not our code, and fires *after* the
+  window is already gone. Worked around in `App::ui` by checking `close_requested()` and
+  calling `std::process::exit(0)`, so the process exits before AppKit runs the faulty teardown.
 - Click the **DARK/LIGHT** chip in the header to flip palettes at runtime; click the footer
   squares to toggle them.

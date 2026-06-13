@@ -573,6 +573,15 @@ fn build_tree() -> Tree<Pane> {
 impl eframe::App for App {
     fn ui(&mut self, root: &mut egui::Ui, _frame: &mut eframe::Frame) {
         let ctx = root.ctx().clone();
+
+        // Work around an upstream macOS/AppKit bug: when winit tears down the
+        // window's responder chain on exit, it can throw an uncaught
+        // `NSRangeException` removing a Touch Bar KVO observer. Exiting the
+        // process the moment a close is requested skips that teardown entirely.
+        if ctx.input(|i| i.viewport().close_requested()) {
+            std::process::exit(0);
+        }
+
         let pal = self.palette();
 
         // (Re)build palette-dependent state on first frame / after a flip.
