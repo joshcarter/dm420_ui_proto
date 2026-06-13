@@ -6,6 +6,8 @@
 //! runtime. Panel contents are throwaway. See FEASIBILITY.md for the verdict.
 
 mod theme;
+mod waterslide_panel;
+mod waterslide_sim;
 
 use eframe::egui;
 use egui::{
@@ -14,6 +16,7 @@ use egui::{
 };
 use egui_tiles::{Behavior, Tile, TileId, Tiles, Tree, UiResponse};
 use theme::*;
+use waterslide_panel::{WaterslidePanel, WaterslideTheme};
 
 fn main() -> eframe::Result<()> {
     let options = eframe::NativeOptions {
@@ -149,6 +152,7 @@ impl Pane {
 struct Tactical<'a> {
     pal: &'a Palette,
     toggles: &'a mut [bool; 4],
+    waterslide: &'a mut WaterslidePanel,
 }
 
 impl<'a> Behavior<Pane> for Tactical<'a> {
@@ -267,62 +271,15 @@ impl<'a> Tactical<'a> {
         );
     }
 
-    fn waterfall_body(&self, ui: &mut egui::Ui, screen: Rect) {
-        let pal = self.pal;
-        let painter = ui.painter();
-        // Fake "decode" rows on the right rail, throwaway data.
-        let calls = [
-            ("OH8X", "−08"),
-            ("JA1NUT", "−15"),
-            ("K1ABC", "−02"),
-            ("DL3XYZ", "−19"),
-            ("VK3WE", "−21"),
-            ("W7GH", "−11"),
-            ("EA7KW", "−17"),
-            ("N5JR", "−05"),
-            ("PY2OG", "−23"),
-            ("G4ABC", "−13"),
-            ("VE3EN", "−09"),
-            ("ZL2AB", "−24"),
-        ];
-        let rail_x = screen.right() - 118.0;
-        let mut y = screen.top() + 14.0;
-        for (call, snr) in calls {
-            if y > screen.bottom() - 12.0 {
-                break;
-            }
-            painter.circle_filled(Pos2::new(rail_x, y), 2.5, pal.accent);
-            painter.text(
-                Pos2::new(rail_x + 10.0, y),
-                Align2::LEFT_CENTER,
-                call,
-                heading(10.0),
-                pal.body,
-            );
-            painter.text(
-                Pos2::new(screen.right() - 12.0, y),
-                Align2::RIGHT_CENTER,
-                snr,
-                mono(9.0),
-                pal.dim,
-            );
-            y += 19.0;
-        }
-        // "NOW" marker line on the left of the rail.
-        painter.line_segment(
-            [
-                Pos2::new(rail_x - 8.0, screen.top() + 6.0),
-                Pos2::new(rail_x - 8.0, screen.bottom() - 6.0),
-            ],
-            Stroke::new(2.0, pal.accent.gamma_multiply(0.85)),
-        );
-        painter.text(
-            Pos2::new(screen.left() + 12.0, screen.top() + 10.0),
-            Align2::LEFT_CENTER,
-            "0–3000 Hz",
-            mono(8.5),
-            pal.dim,
-        );
+    /// The live Waterslide: a scrolling FFT spectrogram on the right half and the
+    /// matching decoded text scrolling left on the other half, split at "NOW".
+    /// Fed by the deterministic `waterslide_sim` fake-data engine.
+    fn waterfall_body(&mut self, ui: &mut egui::Ui, screen: Rect) {
+        let theme = WaterslideTheme::from_palette(self.pal);
+        let dt = ui.input(|i| i.stable_dt) as f64;
+        // Draw inside the recessed screen, leaving the corner brackets visible.
+        let rect = screen.shrink(8.0);
+        self.waterslide.ui(ui, rect, dt, &theme);
     }
 
     fn log_body(&self, ui: &mut egui::Ui) {
@@ -511,6 +468,7 @@ struct App {
     brushed_is_dark: bool,
     visuals_set_for: Option<bool>,
     toggles: [bool; 4],
+    waterslide: WaterslidePanel,
     /// If set (via MARTIAN_SHOT=path), the app renders a few frames, saves a PNG
     /// to that path, and exits — used to capture the deliverable screenshots.
     shot_path: Option<String>,
@@ -530,6 +488,7 @@ impl App {
             brushed_is_dark: !dark,
             visuals_set_for: None,
             toggles: [true, false, false, true], // DX ONLY + LOG on, per reference
+            waterslide: WaterslidePanel::new(7200.0),
             shot_path,
             frame: 0,
         }
@@ -626,6 +585,7 @@ impl eframe::App for App {
                 let mut behavior = Tactical {
                     pal: &pal,
                     toggles: &mut self.toggles,
+                    waterslide: &mut self.waterslide,
                 };
                 self.tree.ui(&mut behavior, ui);
             });

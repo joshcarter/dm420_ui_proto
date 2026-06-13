@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<template id="__bundler_thumbnail">
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+<rect width="100" height="100" fill="#191511"/>
+<g stroke="#f7920f" stroke-width="3" stroke-linecap="round">
+<line x1="32" y1="40" x2="60" y2="40"/>
+<line x1="38" y1="52" x2="68" y2="52"/>
+<line x1="30" y1="64" x2="56" y2="64"/>
+</g>
+<line x1="50" y1="28" x2="50" y2="76" stroke="#f7920f" stroke-width="2" opacity="0.7"/>
+</svg>
+</template>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Saira+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
+</helmet>
+<div data-screen-label="Waterslide" style="width:1158px;background:{{ bg }};padding:20px;font-family:{{ mFont }};color:{{ text }};-webkit-font-smoothing:antialiased">
+
+  <div style="background:{{ face }};border:1px solid {{ edge }};border-radius:5px;box-shadow:{{ bevel }};position:relative;overflow:hidden">
+    <div style="position:absolute;inset:0;pointer-events:none;z-index:1;background:{{ brush }}"></div>
+
+    <!-- ===== HEADER ===== -->
+    <div style="position:relative;z-index:3;display:flex;align-items:center;gap:18px;padding:13px 22px 12px">
+      <span style="width:9px;height:9px;border-radius:50%;background:{{ accent }};box-shadow:0 0 8px 1px {{ accent }}"></span>
+      <div style="display:flex;flex-direction:column;line-height:1">
+        <div style="font-family:{{ hFont }};font-weight:700;font-size:18px;letter-spacing:0.2em;text-transform:uppercase;color:{{ legendColor }}">WATERSLIDE</div>
+        <div style="font-size:9.5px;letter-spacing:0.16em;color:{{ subColor }};margin-top:4px;text-transform:uppercase">FT8 · 20 m · synchronous decode</div>
+      </div>
+
+      <div style="margin-left:auto;display:flex;align-items:center;gap:14px">
+        <!-- color legend -->
+        <div style="display:flex;flex-direction:column;gap:3px;align-items:flex-end">
+          <div style="font-size:8px;letter-spacing:0.16em;color:{{ subColor }}">SIGNAL dB</div>
+          <div style="width:118px;height:7px;border-radius:1px;background:{{ cmapCss }};box-shadow:inset 0 0 0 1px rgba(255,255,255,0.08)"></div>
+          <div style="width:118px;display:flex;justify-content:space-between;font-size:7.5px;color:{{ dim }}"><span>−24</span><span>−10</span><span>+5</span></div>
+        </div>
+        <!-- dial -->
+        <div style="display:flex;align-items:baseline;gap:6px;padding:5px 13px;border-radius:3px;background:{{ lcdBg }};box-shadow:{{ screenInset }}">
+          <span style="font-family:{{ hFont }};font-weight:700;font-size:21px;letter-spacing:0.04em;color:{{ lcdText }};text-shadow:{{ lcdGlow }};line-height:1">14.074</span>
+          <span style="font-size:9px;color:{{ lcdText }};opacity:0.7">MHz</span>
+        </div>
+        <!-- slot clock -->
+        <div style="display:flex;flex-direction:column;gap:4px;min-width:128px">
+          <div style="display:flex;justify-content:space-between;align-items:baseline">
+            <span ref="{{ setClock }}" style="font-family:{{ hFont }};font-weight:600;font-size:14px;letter-spacing:0.08em;color:{{ legendColor }}">00:00:00</span>
+            <span style="font-size:8px;color:{{ subColor }};letter-spacing:0.12em">UTC</span>
+          </div>
+          <div style="height:5px;border-radius:3px;background:rgba(128,128,128,0.18);overflow:hidden">
+            <div ref="{{ setSlotBar }}" style="height:100%;width:0%;background:{{ accent }};box-shadow:0 0 6px {{ accent }}"></div>
+          </div>
+          <div ref="{{ setSlotTxt }}" style="font-size:8.5px;letter-spacing:0.14em;color:{{ subColor }}">RX</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="height:2px;background:linear-gradient(90deg,transparent,{{ accent }}55,transparent);position:relative;z-index:2;opacity:0.6"></div>
+
+    <!-- ===== COLUMN HEADERS ===== -->
+    <div style="position:relative;z-index:3;display:flex;padding:11px 22px 7px">
+      <div style="width:520px;display:flex;align-items:center;gap:8px">
+        <span style="width:3px;height:12px;background:{{ accent }}"></span>
+        <span style="font-family:{{ hFont }};font-weight:600;font-size:10.5px;letter-spacing:0.18em;text-transform:uppercase;color:{{ legendColor }}">Decoded Traffic</span>
+        <span style="font-size:8.5px;letter-spacing:0.1em;color:{{ subColor }}">newest at right · slides ◀</span>
+      </div>
+      <div style="width:2px"></div>
+      <div style="width:520px;display:flex;align-items:center;justify-content:flex-end;gap:8px">
+        <span style="font-size:8.5px;letter-spacing:0.1em;color:{{ subColor }}">slides ▶ · newest at left</span>
+        <span style="font-family:{{ hFont }};font-weight:600;font-size:10.5px;letter-spacing:0.18em;text-transform:uppercase;color:{{ legendColor }}">Waterslide FFT</span>
+        <span style="width:3px;height:12px;background:{{ accent }}"></span>
+      </div>
+      <div style="width:76px;display:flex;align-items:center;justify-content:center">
+        <span style="font-size:8.5px;letter-spacing:0.12em;color:{{ subColor }}">OFFSET</span>
+      </div>
+    </div>
+
+    <!-- ===== SCREEN ===== -->
+    <div style="position:relative;z-index:2;margin:0 22px;background:{{ screenBg }};box-shadow:{{ screenInset }};overflow:hidden">
+      <!-- base row: text | divider | canvas | scale -->
+      <div style="display:flex;position:relative">
+        <!-- LEFT: decoded text lane -->
+        <div ref="{{ setTextLayer }}" style="position:relative;width:520px;height:500px;overflow:hidden"></div>
+        <!-- NOW divider -->
+        <div style="width:2px;height:500px;background:{{ accent }};box-shadow:0 0 12px 1px {{ accent }};position:relative;z-index:6"></div>
+        <!-- RIGHT: FFT canvas -->
+        <div style="position:relative;width:520px;height:500px;overflow:hidden">
+          <canvas ref="{{ setCanvas }}" width="520" height="500" style="display:block;width:520px;height:500px"></canvas>
+        </div>
+        <!-- FREQ SCALE -->
+        <div style="position:relative;width:76px;height:500px;border-left:1px solid rgba(128,128,128,0.16)">
+          <sc-for list="{{ freqTicks }}" as="f" hint-placeholder-count="7">
+            <div style="position:absolute;left:0;top:{{ f.top }}px;width:100%;height:0;transform:translateY(-50%);display:flex;align-items:center">
+              <span style="width:7px;height:1px;background:{{ f.color }};opacity:0.7"></span>
+              <span style="font-size:{{ f.fs }}px;font-weight:{{ f.fw }};letter-spacing:0.04em;color:{{ f.color }};margin-left:5px;font-family:{{ hFont }};line-height:1">{{ f.label }}</span>
+              <span style="font-size:7.5px;color:{{ dim }};margin-left:3px">{{ f.sub }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <!-- graticule overlay (over text + canvas only, 1042px) -->
+      <div style="position:absolute;left:0;top:0;width:1042px;height:500px;pointer-events:none;z-index:5">
+        <sc-for list="{{ gridLines }}" as="g" hint-placeholder-count="7">
+          <div style="position:absolute;left:0;top:{{ g.top }}px;width:100%;height:{{ g.h }}px;background:{{ g.bg }}"></div>
+        </sc-for>
+      </div>
+
+      <!-- scanline overlay -->
+      <div style="position:absolute;inset:0;pointer-events:none;z-index:7;background:{{ scanOverlay }};opacity:0.5"></div>
+
+      <!-- NOW label -->
+      <div style="position:absolute;left:520px;top:6px;transform:translateX(-50%);z-index:8;font-family:{{ hFont }};font-weight:700;font-size:9px;letter-spacing:0.2em;color:{{ accent }};text-shadow:0 0 6px {{ accent }};background:{{ screenBg }};padding:1px 6px;border-radius:2px">NOW</div>
+
+      <!-- corner brackets -->
+      <div style="position:absolute;top:0;left:0;width:11px;height:11px;border-top:1.5px solid {{ accent }};border-left:1.5px solid {{ accent }};z-index:9;pointer-events:none"></div>
+      <div style="position:absolute;top:0;right:0;width:11px;height:11px;border-top:1.5px solid {{ accent }};border-right:1.5px solid {{ accent }};z-index:9;pointer-events:none"></div>
+      <div style="position:absolute;bottom:0;left:0;width:11px;height:11px;border-bottom:1.5px solid {{ accent }};border-left:1.5px solid {{ accent }};z-index:9;pointer-events:none"></div>
+      <div style="position:absolute;bottom:0;right:0;width:11px;height:11px;border-bottom:1.5px solid {{ accent }};border-right:1.5px solid {{ accent }};z-index:9;pointer-events:none"></div>
+    </div>
+
+    <!-- ===== TIME AXIS ===== -->
+    <div style="position:relative;z-index:3;display:flex;padding:7px 22px 14px">
+      <div style="width:520px;display:flex;justify-content:space-between;font-size:8.5px;letter-spacing:0.08em;color:{{ dim }}">
+        <span>−30 s</span><span>−20</span><span>−10</span><span style="color:{{ accent }}">0</span>
+      </div>
+      <div style="width:2px"></div>
+      <div style="width:520px;display:flex;justify-content:space-between;font-size:8.5px;letter-spacing:0.08em;color:{{ dim }}">
+        <span style="color:{{ accent }}">0</span><span>−10</span><span>−20</span><span>−30 s</span>
+      </div>
+      <div style="width:76px"></div>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1158,&quot;height&quot;:706},&quot;variant&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;martian&quot;,&quot;phosphor&quot;,&quot;spectral&quot;],&quot;default&quot;:&quot;martian&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  setCanvas = el => { this.canvas = el; };
+  setTextLayer = el => { this.textLayer = el; };
+  setClock = el => { this.clockEl = el; };
+  setSlotBar = el => { this.slotBar = el; };
+  setSlotTxt = el => { this.slotTxt = el; };
+
+  // ---------- themes ----------
+  themeFor(v){
+    const base = {
+      martian: {
+        name:'MARTIAN', bg:'#191511',
+        face:'linear-gradient(180deg,#2c2823,#171310)',
+        brush:'repeating-linear-gradient(90deg, rgba(255,255,255,0.022) 0px, rgba(255,255,255,0.022) 1px, rgba(0,0,0,0.03) 1px, rgba(0,0,0,0.03) 2px)',
+        edge:'#100c08',
+        bevel:'0 30px 70px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,200,140,0.10), inset 0 -2px 8px rgba(0,0,0,0.5)',
+        screenBg:'#080604',
+        screenInset:'inset 0 2px 11px rgba(0,0,0,0.9), inset 0 0 0 1px rgba(247,146,15,0.32)',
+        accent:'#f7920f', text:'#f4eee6', dim:'rgba(205,175,140,0.6)',
+        legendColor:'#f6ead9', subColor:'#a98a63',
+        lcdBg:'linear-gradient(180deg,#1c1407,#0d0a04)', lcdText:'#ffb24d', lcdGlow:'0 0 8px rgba(247,146,15,0.85)',
+        hFont:"'Chakra Petch',sans-serif", mFont:"'IBM Plex Mono',monospace",
+        gridColor:'rgba(247,146,15,0.09)', gridMid:'rgba(247,146,15,0.22)', scanOverlay:'none',
+        cmap:[[0,[8,6,4]],[0.22,[46,18,6]],[0.42,[110,44,8]],[0.6,[186,86,12]],[0.78,[240,150,40]],[1,[255,236,205]]]
+      },
+      phosphor: {
+        name:'PHOSPHOR', bg:'#07110c',
+        face:'linear-gradient(180deg,#0d1813,#070d0a)',
+        brush:'none', edge:'#03100a',
+        bevel:'0 30px 70px rgba(0,0,0,0.6), inset 0 1px 0 rgba(120,230,150,0.07)',
+        screenBg:'#04100a',
+        screenInset:'inset 0 2px 11px rgba(0,0,0,0.92), inset 0 0 0 1px rgba(95,224,143,0.26)',
+        accent:'#5fe08f', text:'#cdeed6', dim:'rgba(140,190,160,0.55)',
+        legendColor:'#cdeed6', subColor:'#6f9c80',
+        lcdBg:'linear-gradient(180deg,#06140d,#030a07)', lcdText:'#7df0a8', lcdGlow:'0 0 8px rgba(95,224,143,0.8)',
+        hFont:"'JetBrains Mono',monospace", mFont:"'JetBrains Mono',monospace",
+        gridColor:'rgba(95,224,143,0.08)', gridMid:'rgba(95,224,143,0.2)',
+        scanOverlay:'repeating-linear-gradient(0deg, rgba(0,0,0,0) 0px, rgba(0,0,0,0) 2px, rgba(0,0,0,0.18) 3px)',
+        cmap:[[0,[4,9,6]],[0.25,[8,40,20]],[0.45,[14,92,46]],[0.64,[36,158,82]],[0.82,[110,224,140]],[1,[214,255,224]]]
+      },
+      spectral: {
+        name:'SPECTRAL', bg:'#060d14',
+        face:'linear-gradient(180deg,#0c1a26,#05090d)',
+        brush:'none', edge:'#04121c',
+        bevel:'0 30px 70px rgba(0,0,0,0.6), inset 0 1px 0 rgba(120,200,255,0.08)',
+        screenBg:'#050b12',
+        screenInset:'inset 0 2px 11px rgba(0,0,0,0.92), inset 0 0 0 1px rgba(95,208,255,0.26)',
+        accent:'#5fd0ff', text:'#d6e6ee', dim:'rgba(150,180,195,0.6)',
+        legendColor:'#dbeaf2', subColor:'#6f93a6',
+        lcdBg:'linear-gradient(180deg,#06141e,#03090f)', lcdText:'#87dbff', lcdGlow:'0 0 8px rgba(95,208,255,0.8)',
+        hFont:"'Saira Condensed',sans-serif", mFont:"'IBM Plex Mono',monospace",
+        gridColor:'rgba(95,208,255,0.08)', gridMid:'rgba(95,208,255,0.2)', scanOverlay:'none',
+        cmap:[[0,[4,9,12]],[0.25,[8,38,56]],[0.45,[14,84,118]],[0.64,[34,142,190]],[0.82,[110,200,236]],[1,[222,246,255]]]
+      }
+    };
+    return base[v] || base.martian;
+  }
+
+  renderVals(){
+    const v = this.props.variant || 'martian';
+    const T = this.themeFor(v);
+    this._variant = v;
+    if (this._started && v !== this._appliedVariant) this._needTheme = T;
+
+    const cmapCss = 'linear-gradient(90deg,' + T.cmap.map(s =>
+      'rgb(' + s[1][0] + ',' + s[1][1] + ',' + s[1][2] + ') ' + Math.round(s[0]*100) + '%').join(',') + ')';
+
+    const yOf = off => 250 - off/3000*500;
+    const gridLines = [1500,1000,500,0,-500,-1000,-1500].map(off => {
+      const mid = off === 0;
+      return { top:+yOf(off).toFixed(1), h: mid?1.4:1, bg: mid?T.gridMid:T.gridColor };
+    });
+    const ticks = [[1500,'+1500','Hz'],[1000,'+1000',''],[500,'+500',''],[0,'14.074','MHz'],[-500,'−500',''],[-1000,'−1000',''],[-1500,'−1500','Hz']];
+    const freqTicks = ticks.map(t => {
+      const mid = t[0] === 0;
+      return { top:+yOf(t[0]).toFixed(1), label:t[1], sub:t[2],
+        color: mid?T.accent:T.legendColor, fw: mid?700:500, fs: mid?12:9 };
+    });
+
+    return Object.assign({}, T, { cmapCss, gridLines, freqTicks,
+      setCanvas:this.setCanvas, setTextLayer:this.setTextLayer,
+      setClock:this.setClock, setSlotBar:this.setSlotBar, setSlotTxt:this.setSlotTxt });
+  }
+
+  componentDidMount(){ this.boot(); }
+  componentDidUpdate(){ if (this._needTheme){ this.applyTheme(this._needTheme); this._needTheme = null; } }
+  componentWillUnmount(){ cancelAnimationFrame(this._raf); this.save(); }
+
+  // ---------- helpers ----------
+  mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+  yOf(off){ return 250 - off/3000*500; }
+  pad2(n){ n=Math.abs(n); return n<10?'0'+n:''+n; }
+  sgn(n){ return (n<=0?'−':'+') + this.pad2(n); }
+
+  buildCmap(stops){
+    const R=new Uint8Array(256), G=new Uint8Array(256), B=new Uint8Array(256);
+    for(let i=0;i<256;i++){
+      const v=i/255; let a=stops[0], b=stops[stops.length-1];
+      for(let s=0;s<stops.length-1;s++){ if(v>=stops[s][0] && v<=stops[s+1][0]){ a=stops[s]; b=stops[s+1]; break; } }
+      const tt=(v-a[0])/((b[0]-a[0])||1);
+      R[i]=a[1][0]+(b[1][0]-a[1][0])*tt;
+      G[i]=a[1][1]+(b[1][1]-a[1][1])*tt;
+      B[i]=a[1][2]+(b[1][2]-a[1][2])*tt;
+    }
+    this.cR=R; this.cG=G; this.cB=B;
+  }
+
+  applyTheme(T){
+    this.buildCmap(T.cmap);
+    this.MFONT=T.mFont; this.C_TEXT=T.text; this.C_DIM=T.dim; this.C_ACCENT=T.accent; this.C_LEG=T.legendColor;
+    this._appliedVariant=this._variant;
+    if (this.ctx) this.primeCanvas();
+  }
+
+  // ---------- model ----------
+  active(sIdx, i){ return this.mulberry32((sIdx*9973 + i*131 + 7)>>>0)() < this.POOL[i].p; }
+  ampOf(i, sIdx){
+    const base = 0.46 + ((this.POOL[i].snr+25)/30)*0.5;
+    const j = this.mulberry32((sIdx*17 + i*101 + 3)>>>0)()*0.1 - 0.05;
+    return Math.max(0.4, Math.min(1, base + j));
+  }
+  toneOf(sIdx, i, step){ return Math.floor(this.mulberry32((sIdx*131 + i*17 + step*7)>>>0)()*8); }
+
+  messageFor(sIdx, i){
+    const rng = this.mulberry32((sIdx*761 + i*53 + 11)>>>0);
+    const st = this.POOL[i];
+    let pj = Math.floor(rng()*this.POOL.length); if(pj===i) pj=(pj+1)%this.POOL.length;
+    const p = this.POOL[pj].call;
+    const rep = -(1 + Math.floor(rng()*23));
+    const rsnr = -(1 + Math.floor(rng()*24));
+    const r = rng();
+    let msg;
+    if (r<0.26) msg = 'CQ ' + st.call + ' ' + st.grid;
+    else if (r<0.46) msg = p + ' ' + st.call + ' ' + st.grid;
+    else if (r<0.66) msg = p + ' ' + st.call + ' ' + this.sgn(rep);
+    else if (r<0.82) msg = p + ' ' + st.call + ' R' + this.sgn(rep);
+    else if (r<0.93) msg = p + ' ' + st.call + ' RR73';
+    else msg = p + ' ' + st.call + ' 73';
+    return { msg, rsnr };
+  }
+
+  decodesForSlot(sIdx){
+    if (!this._dcache) this._dcache = new Map();
+    if (this._dcache.has(sIdx)) return this._dcache.get(sIdx);
+    const list = [];
+    for (let i=0;i<this.POOL.length;i++){
+      if (this.active(sIdx, i)){
+        const m = this.messageFor(sIdx, i);
+        list.push({ trueY:this.yOf(this.POOL[i].off), msg:m.msg, rsnr:m.rsnr });
+      }
+    }
+    list.sort((a,b)=>a.trueY-b.trueY);
+    const GAP = 16;
+    for (let k=0;k<list.length;k++) list[k].finalY = list[k].trueY;
+    for (let k=1;k<list.length;k++) if (list[k].finalY < list[k-1].finalY + GAP) list[k].finalY = list[k-1].finalY + GAP;
+    const overflow = list.length ? list[list.length-1].finalY - 492 : 0;
+    if (overflow > 0) for (let k=0;k<list.length;k++) list[k].finalY = Math.max(8, list[k].finalY - overflow);
+    this._dcache.set(sIdx, list);
+    return list;
+  }
+
+  // ---------- canvas ----------
+  writeColumn(data, cx, W, ts){
+    const H=500, PPS=this.PPS, SLOT=15, TX=12.6;
+    const cv=this._colVal;
+    for (let y=0;y<H;y++) cv[y] = 0.045 + Math.random()*0.05;
+    const sIdx = Math.floor(ts/SLOT), slotStart = sIdx*SLOT, txStart = slotStart + 0.4;
+    for (let i=0;i<this.POOL.length;i++){
+      if (ts<txStart || ts>txStart+TX) continue;
+      if (!this.active(sIdx, i)) continue;
+      const amp = this.ampOf(i, sIdx);
+      const step = Math.floor((ts - txStart)/0.16);
+      const tone = this.toneOf(sIdx, i, step);
+      const cY = this.yOf(this.POOL[i].off);
+      const tY = cY - (tone - 3.5)*1.7;
+      const lo = Math.max(0, (cY-10)|0), hi = Math.min(H-1, (cY+10)|0);
+      for (let y=lo;y<=hi;y++){
+        const d1=y-tY, d2=y-cY;
+        cv[y] += amp*(Math.exp(-d1*d1/1.62) + 0.22*Math.exp(-d2*d2/20.5));
+      }
+    }
+    for (let y=0;y<H;y++){
+      let v=cv[y]; if(v>1)v=1; const q=(v*255)|0, o=(y*W+cx)*4;
+      data[o]=this.cR[q]; data[o+1]=this.cG[q]; data[o+2]=this.cB[q]; data[o+3]=255;
+    }
+  }
+
+  primeCanvas(){
+    const W=520, H=500, PPS=this.PPS;
+    const img=this.ctx.createImageData(W,H);
+    for (let cx=0;cx<W;cx++) this.writeColumn(img.data, cx, W, this.t - cx/PPS);
+    this.ctx.putImageData(img,0,0);
+    this.dxFrac=0;
+  }
+
+  scroll(dt){
+    const W=520, H=500, PPS=this.PPS;
+    this.dxFrac += dt*PPS;
+    let dx = Math.floor(this.dxFrac);
+    if (dx<=0) return;
+    if (dx>W) dx=W;
+    this.dxFrac -= dx;
+    this.ctx.drawImage(this.canvas, dx, 0);
+    const img=this.ctx.createImageData(dx,H);
+    for (let cx=0;cx<dx;cx++) this.writeColumn(img.data, cx, dx, this.t - cx/PPS);
+    this.ctx.putImageData(img,0,0);
+  }
+
+  // ---------- decode text DOM ----------
+  emit(){
+    const SLOT=15;
+    const completed = Math.floor(this.t/SLOT) - 1;
+    for (let s=this.maxEmit+1; s<=completed; s++){
+      const td = (s+1)*SLOT;
+      const ds = this.decodesForSlot(s);
+      for (const d of ds) this.records.push({ td, finalY:d.finalY, msg:d.msg, rsnr:d.rsnr, dom:null });
+    }
+    this.maxEmit = completed;
+  }
+
+  makeDom(rec){
+    const el = document.createElement('div');
+    el.style.cssText = 'position:absolute;right:0;top:'+(rec.finalY-8)+'px;height:16px;display:flex;align-items:center;gap:8px;white-space:nowrap;font-family:'+this.MFONT+';font-size:12px;font-weight:600;opacity:0;transition:opacity .35s ease;padding-right:7px';
+    const dot = document.createElement('span');
+    dot.style.cssText = 'width:5px;height:5px;border-radius:50%;flex:0 0 auto;background:'+this.C_ACCENT+';box-shadow:0 0 6px '+this.C_ACCENT;
+    const snr = document.createElement('span');
+    snr.textContent = this.sgn(rec.rsnr);
+    snr.style.cssText = 'font-size:10.5px;font-weight:500;color:'+(rec.rsnr>-12?this.C_ACCENT:this.C_DIM);
+    const msg = document.createElement('span');
+    msg.textContent = rec.msg;
+    msg.style.color = this.C_TEXT;
+    el.appendChild(dot); el.appendChild(snr); el.appendChild(msg);
+    this.textLayer.appendChild(el);
+    requestAnimationFrame(()=>{ el.style.opacity='1'; });
+    rec.dom = el;
+  }
+
+  updateDecodes(){
+    const PPS=this.PPS;
+    const keep=[];
+    for (const rec of this.records){
+      const x = (this.t - rec.td)*PPS;
+      if (x > 800){ if (rec.dom) rec.dom.remove(); continue; }
+      if (x < -2){ keep.push(rec); continue; }
+      if (!rec.dom) this.makeDom(rec);
+      rec.dom.style.transform = 'translateX(' + (-x).toFixed(1) + 'px)';
+      keep.push(rec);
+    }
+    this.records = keep;
+  }
+
+  updateClock(){
+    const SLOT=15, TX=12.6, t=this.t;
+    const hh=Math.floor(t/3600)%24, mm=Math.floor(t/60)%60, ss=Math.floor(t)%60;
+    const p2=n=>n<10?'0'+n:''+n;
+    if (this.clockEl) this.clockEl.textContent = p2(hh)+':'+p2(mm)+':'+p2(ss);
+    const ph = t%SLOT;
+    if (this.slotBar) this.slotBar.style.width = (ph/SLOT*100).toFixed(1)+'%';
+    if (this.slotTxt){
+      if (ph <= TX){ this.slotTxt.textContent = 'RX  ·  T−' + Math.ceil(SLOT-ph) + 's'; this.slotTxt.style.color = this.C_DIM; }
+      else { this.slotTxt.textContent = 'DECODE …'; this.slotTxt.style.color = this.C_ACCENT; }
+    }
+  }
+
+  save(){
+    const sec = Math.floor(this.t);
+    if (sec !== this._lastSave){ try { localStorage.setItem('waterslide_t', this.t.toFixed(2)); } catch(e){} this._lastSave = sec; }
+  }
+
+  frame = (ts) => {
+    if (this._lastReal == null) this._lastReal = ts;
+    let dt = (ts - this._lastReal)/1000; this._lastReal = ts;
+    if (dt > 0.1) dt = 0.1; if (dt < 0) dt = 0;
+    if (document.hidden) dt = 0;
+    this.t += dt;
+    this.scroll(dt);
+    this.emit();
+    this.updateDecodes();
+    this.updateClock();
+    this.save();
+    this._raf = requestAnimationFrame(this.frame);
+  };
+
+  boot(){
+    if (!this.canvas || !this.textLayer) return;
+    this.PPS = 520/30;
+    this._colVal = new Float32Array(500);
+    this.ctx = this.canvas.getContext('2d');
+    this.records = [];
+    this.POOL = [
+      { call:'SM5KQ',  grid:'JO89', off: 1420, snr:-7,  p:0.50 },
+      { call:'K1ABC',  grid:'FN42', off: 1180, snr:-3,  p:0.60 },
+      { call:'W9XYZ',  grid:'EM48', off: 1080, snr:-12, p:0.55 },
+      { call:'OH8X',   grid:'KP24', off: 880,  snr:-8,  p:0.52 },
+      { call:'JA1NUT', grid:'PM95', off: 600,  snr:-15, p:0.48 },
+      { call:'DL3ABC', grid:'JO31', off: 360,  snr:-6,  p:0.55 },
+      { call:'EA7KW',  grid:'IM67', off: 120,  snr:-17, p:0.46 },
+      { call:'VK3WE',  grid:'QF22', off: -80,  snr:-21, p:0.42 },
+      { call:'N5JR',   grid:'EM12', off: -300, snr:-5,  p:0.58 },
+      { call:'PY2OG',  grid:'GG66', off: -540, snr:-19, p:0.46 },
+      { call:'G4XYZ',  grid:'IO91', off: -760, snr:-11, p:0.52 },
+      { call:'VE3EN',  grid:'FN25', off: -980, snr:-9,  p:0.50 },
+      { call:'ZL2AB',  grid:'RE78', off:-1180, snr:-23, p:0.40 },
+      { call:'UA9CDC', grid:'MO06', off:-1360, snr:-14, p:0.48 }
+    ];
+
+    let stored = null; try { stored = localStorage.getItem('waterslide_t'); } catch(e){}
+    this.t = stored != null ? parseFloat(stored) : (4000 + Math.random()*5000);
+    this.dxFrac = 0;
+    this.maxEmit = Math.floor(this.t/15) - 1 - 3;
+
+    this.applyTheme(this.themeFor(this._variant || 'martian'));  // builds cmap + primes canvas
+    this._started = true;
+    this._lastReal = null;
+    this._raf = requestAnimationFrame(this.frame);
+  }
+}
+</script>
+</body>
+</html>
