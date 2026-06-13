@@ -1,0 +1,11 @@
+[package]
+name = "martian_hybrid"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+eframe = "0.34.3"
+egui = "0.34.3"
+egui_extras = "0.34.3"
+egui_tiles = "0.15.0"
+image = { version = "0.25.10", default-features = false, features = ["png"] }

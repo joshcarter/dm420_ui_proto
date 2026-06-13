@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</helmet>
+<div style="width:960px;height:600px;position:relative;overflow:hidden;border-radius:4px;background:{{ theme.face }};color:{{ theme.text }};font-family:{{ theme.mFont }};border:1px solid {{ theme.edge }};box-shadow:{{ theme.bevel }}">
+
+  <!-- brushed-metal overlay -->
+  <div style="position:absolute;inset:0;pointer-events:none;z-index:1;background:{{ theme.brush }};border-radius:4px"></div>
+
+  <!-- screws & slide switches removed for the hybrid: textured chassis, no hardware -->
+
+  <!-- ============ TOP BAR (metal) ============ -->
+  <div style="height:46px;display:flex;align-items:center;gap:14px;padding:0 30px;position:relative;z-index:3">
+    <div style="display:flex;align-items:center;gap:9px">
+      <span style="width:9px;height:9px;border-radius:50%;background:{{ theme.led }};box-shadow:{{ theme.ledGlow }}"></span>
+      <div style="font-family:{{ theme.hFont }};font-weight:700;font-size:15px;letter-spacing:0.16em;text-transform:uppercase;line-height:1;color:{{ theme.legendColor }};text-shadow:{{ theme.legendShadow }}">DIGIMODE</div>
+      <div style="font-size:9px;letter-spacing:0.18em;color:{{ theme.subColor }};text-transform:uppercase;text-shadow:{{ theme.legendShadow }}">FT8 ENGINE</div>
+    </div>
+
+    <!-- recessed LCD frequency window -->
+    <div style="margin-left:auto;display:flex;align-items:baseline;gap:7px;padding:3px 12px;border-radius:3px;background:{{ theme.lcdBg }};box-shadow:{{ theme.screenInset }};position:relative;overflow:hidden">
+      <span style="font-family:{{ theme.hFont }};font-weight:700;font-size:21px;letter-spacing:0.05em;color:{{ theme.lcdText }};text-shadow:{{ theme.lcdGlow }};line-height:1">14.074</span>
+      <span style="font-size:9px;color:{{ theme.lcdText }};opacity:0.7">MHz</span>
+      <span style="font-size:8.5px;color:{{ theme.lcdText }};opacity:0.55;letter-spacing:0.08em">OFS 1240</span>
+      <div style="position:absolute;inset:0;background:{{ theme.sheen }};pointer-events:none"></div>
+    </div>
+
+    <div style="margin-left:auto;display:flex;align-items:center;gap:13px;font-size:9.5px;letter-spacing:0.1em;color:{{ theme.subColor }}">
+      <div style="text-shadow:{{ theme.legendShadow }}"><span style="color:{{ theme.legendColor }}">2359:45</span> UTC</div>
+      <div style="text-shadow:{{ theme.legendShadow }}">20M</div>
+      <div style="display:flex;align-items:center;gap:5px;text-shadow:{{ theme.legendShadow }}"><span style="width:7px;height:7px;border-radius:50%;background:{{ theme.led }};box-shadow:{{ theme.ledGlow }};display:inline-block"></span>RX</div>
+      <div style="padding:3px 8px;border-radius:3px;background:{{ theme.lcdBg }};box-shadow:{{ theme.screenInset }};font-family:{{ theme.hFont }};letter-spacing:0.16em;color:{{ theme.lcdText }};text-shadow:{{ theme.lcdGlow }}">{{ theme.modeLabel }}</div>
+    </div>
+  </div>
+
+  <!-- groove under top bar -->
+  <div style="height:2px;background:{{ theme.grooveH }};position:relative;z-index:2"></div>
+
+  <!-- ============ MAIN ============ -->
+  <div style="display:flex;height:508px;position:relative;z-index:2">
+
+    <!-- ---- LEFT : WATERFALL ---- -->
+    <div style="width:470px;display:flex;flex-direction:column;padding:8px 10px 8px 14px;position:relative">
+      <!-- head -->
+      <div style="height:24px;display:flex;align-items:center;gap:8px">
+        <span style="width:3px;height:14px;background:{{ theme.accent }};display:inline-block;flex-shrink:0"></span>
+        <div style="font-family:{{ theme.hFont }};font-weight:600;font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:{{ theme.legendColor }};text-shadow:{{ theme.legendShadow }}">Waterfall</div>
+        <div style="font-size:8.5px;color:{{ theme.subColor }};letter-spacing:0.1em;text-shadow:{{ theme.legendShadow }}">0–3000 Hz · time → left</div>
+        <div style="margin-left:auto;display:flex;gap:9px;font-size:8px;letter-spacing:0.1em;color:{{ theme.subColor }};align-items:center">
+          <span style="display:flex;align-items:center;gap:3px"><span style="width:5px;height:5px;border-radius:50%;background:{{ theme.led }};box-shadow:{{ theme.ledGlow }}"></span>SPLIT</span>
+          <span>AGC</span>
+        </div>
+      </div>
+      <!-- recessed screen: freq axis | spectro | rail -->
+      <div style="flex:1;margin-top:6px;border-radius:0;background:{{ theme.screenBg }};box-shadow:{{ theme.screenInset }};display:grid;grid-template-columns:28px 1fr 124px;min-height:0;overflow:hidden;position:relative">
+        <div style="position:absolute;top:0;left:0;width:9px;height:9px;border-top:1.5px solid {{ theme.accent }};border-left:1.5px solid {{ theme.accent }};z-index:4;pointer-events:none"></div>
+        <div style="position:absolute;top:0;right:0;width:9px;height:9px;border-top:1.5px solid {{ theme.accent }};border-right:1.5px solid {{ theme.accent }};z-index:4;pointer-events:none"></div>
+        <div style="position:absolute;bottom:0;left:0;width:9px;height:9px;border-bottom:1.5px solid {{ theme.accent }};border-left:1.5px solid {{ theme.accent }};z-index:4;pointer-events:none"></div>
+        <div style="position:absolute;bottom:0;right:0;width:9px;height:9px;border-bottom:1.5px solid {{ theme.accent }};border-right:1.5px solid {{ theme.accent }};z-index:4;pointer-events:none"></div>
+        <div style="position:relative;border-right:1px solid rgba(128,128,128,0.18)">
+          <div style="position:absolute;top:3px;right:4px;font-size:8px;color:{{ theme.dim }}">3k</div>
+          <div style="position:absolute;top:33%;right:4px;font-size:8px;color:{{ theme.dim }}">2k</div>
+          <div style="position:absolute;top:66%;right:4px;font-size:8px;color:{{ theme.dim }}">1k</div>
+          <div style="position:absolute;bottom:3px;right:4px;font-size:8px;color:{{ theme.dim }}">Hz</div>
+        </div>
+        <div style="position:relative;overflow:hidden">
+          <img src="{{ theme.wf }}" alt="waterfall" style="position:absolute;inset:0;width:100%;height:100%;object-fit:fill;display:block"/>
+          <div style="position:absolute;top:0;bottom:0;right:0;width:2px;background:{{ theme.accent }};opacity:0.85"></div>
+          <div style="position:absolute;top:4px;right:6px;font-size:8px;letter-spacing:0.14em;color:{{ theme.accent }};font-family:{{ theme.hFont }}">NOW</div>
+          <div style="position:absolute;bottom:3px;left:6px;font-size:8px;color:{{ theme.dim }}">−60s</div>
+          <div style="position:absolute;inset:0;background:{{ theme.sheen }};pointer-events:none"></div>
+        </div>
+        <div style="position:relative;border-left:1px solid rgba(128,128,128,0.18)">
+          <sc-for list="{{ decodes }}" as="d" hint-placeholder-count="10">
+            <div style="position:absolute;left:0;right:0;top:{{ d.topPx }}px;height:15px;display:flex;align-items:center;gap:4px;padding-left:13px">
+              <div style="position:absolute;left:2px;top:6px;width:7px;height:1px;background:{{ theme.accent }};opacity:0.6"></div>
+              <div style="position:absolute;left:0;top:4px;width:5px;height:5px;border-radius:50%;background:{{ theme.led }};box-shadow:{{ theme.ledGlow }}"></div>
+              <span style="font-family:{{ theme.hFont }};font-weight:600;font-size:10px;letter-spacing:0.04em;color:{{ theme.text }}">{{ d.call }}</span>
+              <span style="font-size:8.5px;color:{{ theme.dim }};margin-left:auto;padding-right:6px">{{ d.snr }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      <!-- ticker on metal -->
+      <div style="height:18px;margin-top:6px;display:flex;align-items:center;font-size:9px;letter-spacing:0.04em;white-space:nowrap;overflow:hidden;color:{{ theme.subColor }};text-shadow:{{ theme.legendShadow }}">
+        <span>235945</span><span style="color:{{ theme.accent }};font-weight:600">&nbsp;&nbsp;−02&nbsp;&nbsp;</span><span style="color:{{ theme.legendColor }}">K1ABC W9XYZ EM48</span><span>&nbsp;&nbsp;·&nbsp;&nbsp;235945 −17 CQ EA7KW IM67</span>
+      </div>
+    </div>
+
+    <!-- vertical groove -->
+    <div style="width:2px;background:{{ theme.grooveV }};position:relative;z-index:2"></div>
+
+    <!-- ---- RIGHT COLUMN ---- -->
+    <div style="flex:1;display:flex;flex-direction:column;padding:8px 14px 8px 12px;min-width:0">
+
+      <!-- LOG -->
+      <div style="display:flex;flex-direction:column;height:236px">
+        <div style="height:24px;display:flex;align-items:center;gap:8px">
+          <span style="width:3px;height:14px;background:{{ theme.accent }};display:inline-block;flex-shrink:0"></span>
+          <div style="font-family:{{ theme.hFont }};font-weight:600;font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:{{ theme.legendColor }};text-shadow:{{ theme.legendShadow }}">Log Book</div>
+          <div style="font-size:8.5px;color:{{ theme.subColor }};letter-spacing:0.1em;text-shadow:{{ theme.legendShadow }}">last 8 · FT8</div>
+          <div style="margin-left:auto;font-size:9px;color:{{ theme.legendColor }};font-family:{{ theme.hFont }};letter-spacing:0.1em;text-shadow:{{ theme.legendShadow }}">312 QSO</div>
+        </div>
+        <div style="flex:1;margin-top:6px;border-radius:0;background:{{ theme.screenBg }};box-shadow:{{ theme.screenInset }};overflow:hidden;position:relative">
+          <div style="position:absolute;inset:0;background:{{ theme.sheen }};pointer-events:none;z-index:2"></div>
+          <div style="position:absolute;top:0;left:0;width:9px;height:9px;border-top:1.5px solid {{ theme.accent }};border-left:1.5px solid {{ theme.accent }};z-index:3;pointer-events:none"></div>
+          <div style="position:absolute;top:0;right:0;width:9px;height:9px;border-top:1.5px solid {{ theme.accent }};border-right:1.5px solid {{ theme.accent }};z-index:3;pointer-events:none"></div>
+          <div style="position:absolute;bottom:0;left:0;width:9px;height:9px;border-bottom:1.5px solid {{ theme.accent }};border-left:1.5px solid {{ theme.accent }};z-index:3;pointer-events:none"></div>
+          <div style="position:absolute;bottom:0;right:0;width:9px;height:9px;border-bottom:1.5px solid {{ theme.accent }};border-right:1.5px solid {{ theme.accent }};z-index:3;pointer-events:none"></div>
+          <div style="display:grid;grid-template-columns:50px 1fr 60px 48px 48px;padding:5px 12px;font-size:8px;letter-spacing:0.12em;color:{{ theme.dim }};text-transform:uppercase;border-bottom:1px solid rgba(128,128,128,0.16)">
+            <div>UTC</div><div>Call</div><div>Grid</div><div style="text-align:right">Snt</div><div style="text-align:right">Rcv</div>
+          </div>
+          <sc-for list="{{ logs }}" as="l" hint-placeholder-count="8">
+            <div style="display:grid;grid-template-columns:50px 1fr 60px 48px 48px;padding:0 12px;height:22px;align-items:center;font-size:10px;border-bottom:1px solid rgba(128,128,128,0.10)">
+              <div style="color:{{ theme.dim }}">{{ l.utc }}</div>
+              <div style="font-family:{{ theme.hFont }};font-weight:600;letter-spacing:0.05em;color:{{ theme.text }}">{{ l.call }}</div>
+              <div style="color:{{ theme.dim }}">{{ l.grid }}</div>
+              <div style="text-align:right;color:{{ theme.text }}">{{ l.s }}</div>
+              <div style="text-align:right;color:{{ theme.accent }}">{{ l.r }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <!-- MAP -->
+      <div style="flex:1;display:flex;flex-direction:column;margin-top:8px;min-height:0">
+        <div style="height:24px;display:flex;align-items:center;gap:8px">
+          <span style="width:3px;height:14px;background:{{ theme.accent }};display:inline-block;flex-shrink:0"></span>
+          <div style="font-family:{{ theme.hFont }};font-weight:600;font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:{{ theme.legendColor }};text-shadow:{{ theme.legendShadow }}">Contacts</div>
+          <div style="font-size:8.5px;color:{{ theme.subColor }};letter-spacing:0.1em;text-shadow:{{ theme.legendShadow }}">azimuthal · CN87</div>
+          <div style="margin-left:auto;font-size:8.5px;color:{{ theme.subColor }};letter-spacing:0.1em;text-shadow:{{ theme.legendShadow }}">12 spots</div>
+        </div>
+        <div style="flex:1;margin-top:6px;border-radius:0;background:{{ theme.screenBg }};box-shadow:{{ theme.screenInset }};overflow:hidden;position:relative;display:flex;align-items:center;justify-content:center;padding:4px">
+          <div style="position:absolute;inset:0;background:{{ theme.sheen }};pointer-events:none;z-index:2"></div>
+          <div style="position:absolute;top:0;left:0;width:9px;height:9px;border-top:1.5px solid {{ theme.accent }};border-left:1.5px solid {{ theme.accent }};z-index:3;pointer-events:none"></div>
+          <div style="position:absolute;top:0;right:0;width:9px;height:9px;border-top:1.5px solid {{ theme.accent }};border-right:1.5px solid {{ theme.accent }};z-index:3;pointer-events:none"></div>
+          <div style="position:absolute;bottom:0;left:0;width:9px;height:9px;border-bottom:1.5px solid {{ theme.accent }};border-left:1.5px solid {{ theme.accent }};z-index:3;pointer-events:none"></div>
+          <div style="position:absolute;bottom:0;right:0;width:9px;height:9px;border-bottom:1.5px solid {{ theme.accent }};border-right:1.5px solid {{ theme.accent }};z-index:3;pointer-events:none"></div>
+          <svg viewBox="0 0 200 200" style="height:100%;max-height:150px;width:auto;overflow:visible">
+            <circle cx="100" cy="100" r="23" fill="none" stroke="{{ theme.dim }}" stroke-width="0.6" stroke-opacity="0.5"></circle>
+            <circle cx="100" cy="100" r="46" fill="none" stroke="{{ theme.dim }}" stroke-width="0.6" stroke-opacity="0.5"></circle>
+            <circle cx="100" cy="100" r="69" fill="none" stroke="{{ theme.dim }}" stroke-width="0.6" stroke-opacity="0.5"></circle>
+            <circle cx="100" cy="100" r="92" fill="none" stroke="{{ theme.accent }}" stroke-width="0.9" stroke-opacity="0.6"></circle>
+            <line x1="100" y1="8" x2="100" y2="192" stroke="{{ theme.dim }}" stroke-width="0.5" stroke-opacity="0.5"></line>
+            <line x1="8" y1="100" x2="192" y2="100" stroke="{{ theme.dim }}" stroke-width="0.5" stroke-opacity="0.5"></line>
+            <line x1="34.6" y1="34.6" x2="165.4" y2="165.4" stroke="{{ theme.dim }}" stroke-width="0.4" stroke-dasharray="2 3" stroke-opacity="0.4"></line>
+            <line x1="165.4" y1="34.6" x2="34.6" y2="165.4" stroke="{{ theme.dim }}" stroke-width="0.4" stroke-dasharray="2 3" stroke-opacity="0.4"></line>
+            <sc-for list="{{ contacts }}" as="c" hint-placeholder-count="12">
+              <line x1="100" y1="100" x2="{{ c.x }}" y2="{{ c.y }}" stroke="{{ theme.accent }}" stroke-width="0.4" stroke-opacity="0.32"></line>
+              <circle cx="{{ c.x }}" cy="{{ c.y }}" r="2.2" fill="{{ theme.accent }}"></circle>
+              <text x="{{ c.lx }}" y="{{ c.ly }}" fill="{{ theme.text }}" font-size="5.4" text-anchor="{{ c.anchor }}" font-family="{{ theme.mFont }}">{{ c.call }}</text>
+            </sc-for>
+            <circle cx="100" cy="100" r="2.6" fill="{{ theme.screenBg }}" stroke="{{ theme.accent }}" stroke-width="1.2"></circle>
+          </svg>
+        </div>
+      </div>
+
+      <!-- flat tactical toggle footer -->
+      <div style="height:30px;margin-top:8px;display:flex;align-items:center;gap:18px">
+        <div style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;background:{{ theme.accent }};display:inline-block"></span><span style="font-size:8.5px;letter-spacing:0.14em;color:{{ theme.legendColor }};text-shadow:{{ theme.legendShadow }}">DX ONLY</span></div>
+        <div style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border:1.5px solid {{ theme.subColor }};display:inline-block"></span><span style="font-size:8.5px;letter-spacing:0.14em;color:{{ theme.subColor }};text-shadow:{{ theme.legendShadow }}">CQ</span></div>
+        <div style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border:1.5px solid {{ theme.subColor }};display:inline-block"></span><span style="font-size:8.5px;letter-spacing:0.14em;color:{{ theme.subColor }};text-shadow:{{ theme.legendShadow }}">ALERT</span></div>
+        <div style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;background:{{ theme.accent }};display:inline-block"></span><span style="font-size:8.5px;letter-spacing:0.14em;color:{{ theme.legendColor }};text-shadow:{{ theme.legendShadow }}">LOG</span></div>
+        <div style="margin-left:auto;display:flex;align-items:flex-end;gap:2px;height:14px">
+          <div style="width:3px;height:5px;background:{{ theme.accent }}"></div>
+          <div style="width:3px;height:8px;background:{{ theme.accent }}"></div>
+          <div style="width:3px;height:11px;background:{{ theme.accent }}"></div>
+          <div style="width:3px;height:14px;background:{{ theme.accent }}"></div>
+          <div style="width:3px;height:9px;background:{{ theme.subColor }};opacity:0.45"></div>
+          <div style="width:3px;height:5px;background:{{ theme.subColor }};opacity:0.45"></div>
+          <span style="font-size:7.5px;letter-spacing:0.1em;color:{{ theme.subColor }};margin-left:4px;align-self:center;text-shadow:{{ theme.legendShadow }}">SNR</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:960,&quot;height&quot;:600},&quot;theme&quot;:{&quot;editor&quot;:null,&quot;default&quot;:{}}}">
+class Component extends DCLogic {
+  renderVals() {
+    const t = this.props.theme || {};
+    const FMAX = 3000, R = 92, CX = 100, CY = 100, MAXD = 13000;
+
+    const decRaw = [
+      [2680,'OH8X','−08'],[2510,'JA1NUT','−15'],[2360,'K1ABC','−02'],
+      [2200,'DL3XYZ','−19'],[2050,'VK3WE','−21'],[1880,'W7GH','−11'],
+      [1720,'EA7KW','−17'],[1560,'N5JR','−05'],[1400,'PY2OG','−23'],
+      [1240,'G4ABC','−13'],[1080,'VE3EN','−09'],[920,'ZL2AB','−24'],
+      [600,'UA9XYZ','−18']
+    ];
+    const RAILH = 438; // recessed screen height inside left column
+    const decodes = decRaw.map(d => {
+      let px = (1 - d[0]/FMAX) * RAILH - 7;
+      px = Math.max(2, Math.min(RAILH - 16, px));
+      return { call: d[1], snr: d[2], topPx: +px.toFixed(1) };
+    });
+
+    const conRaw = [
+      ['OH8X',8,7000],['JA1NUT',322,7700],['DL3XYZ',30,8000],['VK3WE',250,12800],
+      ['EA7KW',46,8600],['N5JR',112,2800],['PY2OG',132,11000],['G4ABC',25,7600],
+      ['VE3EN',72,3400],['ZL2AB',232,11500],['W7GH',158,1500],['UA9XYZ',352,8400]
+    ];
+    const contacts = conRaw.map(c => {
+      const r = c[2]/MAXD*R, a = c[1]*Math.PI/180;
+      const x = CX + r*Math.sin(a), y = CY - r*Math.cos(a);
+      const right = Math.sin(a) >= 0;
+      return { call: c[0], x: +x.toFixed(1), y: +y.toFixed(1),
+        lx: +(x + (right ? 4 : -4)).toFixed(1), ly: +(y - 2.5).toFixed(1),
+        anchor: right ? 'start' : 'end' };
+    });
+
+    const logs = [
+      {utc:'2358',call:'W7GH',grid:'CN94',s:'−11',r:'−09'},
+      {utc:'2355',call:'JA1NUT',grid:'PM95',s:'−15',r:'−13'},
+      {utc:'2351',call:'G4ABC',grid:'IO91',s:'−13',r:'−07'},
+      {utc:'2347',call:'VE3EN',grid:'FN25',s:'−09',r:'−02'},
+      {utc:'2342',call:'EA7KW',grid:'IM67',s:'−17',r:'−19'},
+      {utc:'2338',call:'N5JR',grid:'EM12',s:'−05',r:'−08'},
+      {utc:'2331',call:'OH8X',grid:'KP24',s:'−08',r:'−14'},
+      {utc:'2325',call:'PY2OG',grid:'GG66',s:'−23',r:'−21'}
+    ];
+
+    return {
+      theme: t, decodes, contacts, logs,
+      footerLamps: !!t.footerLamps, footerSwitches: !t.footerLamps
+    };
+  }
+}
+</script>
+</body>
+</html>

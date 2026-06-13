@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</helmet>
+<div style="min-width:2080px;background:#191511;padding:34px 40px 60px;font-family:'IBM Plex Mono',monospace;color:#efe3d4">
+
+  <!-- board header -->
+  <div style="display:flex;align-items:flex-end;gap:24px;border-bottom:1.5px solid #6b4a1e;padding-bottom:14px;margin-bottom:6px">
+    <div>
+      <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:32px;letter-spacing:0.05em;line-height:0.95;text-transform:uppercase;color:#f6ead9">Martian — Anodized × Tactical</div>
+      <div style="font-size:12px;letter-spacing:0.04em;color:#a98a63;margin-top:5px">A split-the-difference hybrid: brushed-metal chassis &amp; distinct recessed panels — no screws, no slide switches — with Tactical corner brackets and hard contrast.</div>
+    </div>
+    <div style="margin-left:auto;text-align:right;font-size:11px;letter-spacing:0.04em;color:#a98a63;line-height:1.7">
+      <div>accent <span style="color:#f7920f">█</span> #F7920F dark &nbsp; <span style="color:#c2660f">█</span> #C2660F light</div>
+      <div>type &nbsp;Chakra Petch · IBM Plex Mono</div>
+    </div>
+  </div>
+
+  <!-- what-changed key -->
+  <div style="display:flex;gap:30px;margin-top:22px;font-size:11.5px;line-height:1.55">
+    <div style="display:flex;flex-direction:column;gap:5px">
+      <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:11px;letter-spacing:0.2em;color:#7fae6a;text-transform:uppercase">Kept from Anodized</div>
+      <div style="color:#bca788">Brushed-metal texture · grooves between panels</div>
+      <div style="color:#bca788">Recessed glass screens · engraved amber legends</div>
+    </div>
+    <div style="width:1px;background:#3a2c1a"></div>
+    <div style="display:flex;flex-direction:column;gap:5px">
+      <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:11px;letter-spacing:0.2em;color:#c98a6a;text-transform:uppercase">Dropped</div>
+      <div style="color:#bca788">Hex mount screws</div>
+      <div style="color:#bca788">Physical slide switches</div>
+    </div>
+    <div style="width:1px;background:#3a2c1a"></div>
+    <div style="display:flex;flex-direction:column;gap:5px">
+      <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:11px;letter-spacing:0.2em;color:#e0a24a;text-transform:uppercase">Borrowed from Tactical</div>
+      <div style="color:#bca788">L-bracket corners on every panel · spine-marked heads</div>
+      <div style="color:#bca788">Accent screen rings · squared corners · flat toggles</div>
+    </div>
+  </div>
+
+  <section style="margin-top:34px">
+    <div style="display:flex;align-items:baseline;gap:14px;margin-bottom:14px">
+      <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:13px;letter-spacing:0.1em;color:#8a6a3e">05·02</div>
+      <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:22px;letter-spacing:0.08em;text-transform:uppercase;color:#f6ead9">Anvil</div>
+      <div style="font-size:11px;letter-spacing:0.16em;color:#a98a63;text-transform:uppercase">machined · bracketed</div>
+    </div>
+
+    <div style="display:flex;gap:26px">
+      <div style="display:flex;flex-direction:column;gap:7px">
+        <div style="display:flex;align-items:center;gap:8px"><span style="width:8px;height:8px;background:#f7920f;display:inline-block"></span><span style="font-size:10px;letter-spacing:0.2em;color:#a98a63">DARK · GRAPHITE</span></div>
+        <div style="box-shadow:0 14px 40px rgba(0,0,0,0.55);line-height:0;border-radius:4px">
+          <dc-import name="MartianHybrid" theme="{{ dark }}" hint-size="960px,600px"></dc-import>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:7px">
+        <div style="display:flex;align-items:center;gap:8px"><span style="width:8px;height:8px;border:1.5px solid #c2660f;display:inline-block"></span><span style="font-size:10px;letter-spacing:0.2em;color:#a98a63">LIGHT · SILVER</span></div>
+        <div style="box-shadow:0 14px 40px rgba(0,0,0,0.4);line-height:0;border-radius:4px">
+          <dc-import name="MartianHybrid" theme="{{ light }}" hint-size="960px,600px"></dc-import>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const dark = {
+      modeLabel:'DARK', wf:'wf-martian-dark.png',
+      hFont:"'Chakra Petch',sans-serif", mFont:"'IBM Plex Mono',monospace",
+      face:'linear-gradient(180deg,#2c2823,#171310)',
+      brush:'repeating-linear-gradient(90deg, rgba(255,255,255,0.022) 0px, rgba(255,255,255,0.022) 1px, rgba(0,0,0,0.03) 1px, rgba(0,0,0,0.03) 2px)',
+      edge:'#100c08',
+      bevel:'0 3px 14px rgba(0,0,0,0.65), inset 0 1px 0 rgba(255,200,140,0.12), inset 0 -2px 6px rgba(0,0,0,0.5)',
+      grooveH:'linear-gradient(180deg, rgba(0,0,0,0.6), rgba(247,146,15,0.12))',
+      grooveV:'linear-gradient(90deg, rgba(0,0,0,0.6), rgba(247,146,15,0.12))',
+      legendColor:'#f6e6cf',
+      legendShadow:'0 -1px 0 rgba(0,0,0,0.7), 0 1px 0 rgba(255,255,255,0.05)',
+      subColor:'rgba(202,180,150,0.72)',
+      led:'radial-gradient(circle at 40% 35%, #ffe2b0, #f7920f 55%, #6e3604)',
+      ledGlow:'0 0 7px 1px rgba(247,146,15,0.75), inset 0 0 1px rgba(255,255,255,0.6)',
+      screenBg:'#080604',
+      screenInset:'inset 0 2px 9px rgba(0,0,0,0.9), inset 0 0 0 1px rgba(247,146,15,0.4)',
+      sheen:'linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0) 42%)',
+      text:'#f4eee6', dim:'rgba(205,175,140,0.6)', accent:'#f7920f',
+      lcdBg:'linear-gradient(180deg,#1c1407,#0d0a04)', lcdText:'#ffb24d',
+      lcdGlow:'0 0 8px rgba(247,146,15,0.85)'
+    };
+    const light = {
+      modeLabel:'LIGHT', wf:'wf-martian-light.png',
+      hFont:"'Chakra Petch',sans-serif", mFont:"'IBM Plex Mono',monospace",
+      face:'linear-gradient(180deg,#e9e4d9,#cdc6b7)',
+      brush:'repeating-linear-gradient(90deg, rgba(255,255,255,0.55) 0px, rgba(255,255,255,0.55) 1px, rgba(0,0,0,0.035) 1px, rgba(0,0,0,0.035) 2px)',
+      edge:'#a39880',
+      bevel:'0 3px 12px rgba(0,0,0,0.24), inset 0 1px 0 rgba(255,255,255,0.85), inset 0 -2px 6px rgba(0,0,0,0.12)',
+      grooveH:'linear-gradient(180deg, rgba(60,40,15,0.42), rgba(255,255,255,0.7))',
+      grooveV:'linear-gradient(90deg, rgba(60,40,15,0.42), rgba(255,255,255,0.7))',
+      legendColor:'#36260f',
+      legendShadow:'0 1px 0 rgba(255,255,255,0.7), 0 -1px 0 rgba(0,0,0,0.12)',
+      subColor:'rgba(95,68,32,0.78)',
+      led:'radial-gradient(circle at 40% 35%, #ffd9a0, #e07a0c 55%, #9a5208)',
+      ledGlow:'0 0 6px 1px rgba(224,122,12,0.5), inset 0 0 1px rgba(255,255,255,0.8)',
+      screenBg:'#efe7dc',
+      screenInset:'inset 0 2px 7px rgba(0,0,0,0.22), inset 0 0 0 1px rgba(150,80,10,0.42)',
+      sheen:'linear-gradient(135deg, rgba(255,255,255,0.5), rgba(255,255,255,0) 40%)',
+      text:'#241808', dim:'rgba(120,80,40,0.62)', accent:'#c2660f',
+      lcdBg:'linear-gradient(180deg,#e8dcc0,#d4c69e)', lcdText:'#3a2a10', lcdGlow:'none'
+    };
+    return { dark, light };
+  }
+}
+</script>
+</body>
+</html>
