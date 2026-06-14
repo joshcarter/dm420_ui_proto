@@ -183,6 +183,7 @@ pub struct DecodeRec {
     pub final_y: f32, // vertical position in 0..REF_H (frequency lane, de-collided)
     pub msg: String,
     pub rsnr: i32,
+    pub off: i32,    // station's true audio offset (Hz); clicking snaps TX here
 }
 
 pub struct Sim {
@@ -214,7 +215,7 @@ impl Sim {
         while s <= completed {
             let td = (s + 1) as f64 * SLOT;
             for d in self.decodes_for_slot(s) {
-                self.records.push(DecodeRec { td, final_y: d.final_y, msg: d.msg, rsnr: d.rsnr });
+                self.records.push(DecodeRec { td, final_y: d.final_y, msg: d.msg, rsnr: d.rsnr, off: d.off });
             }
             s += 1;
         }
