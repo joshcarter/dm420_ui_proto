@@ -8,6 +8,7 @@
 //! Layout/geometry/fake-data come from `panel_data`; all colour/chrome flows
 //! through a `theme::Palette`, so the light/dark flip is one struct swap.
 
+mod geo_data;
 mod panel_data;
 mod theme;
 mod waterslide_panel;
@@ -111,6 +112,24 @@ fn make_brushed(ctx: &egui::Context, pal: &Palette) -> TextureHandle {
     ctx.load_texture("brushed", img, TextureOptions::NEAREST_REPEAT)
 }
 
+/// Shaded-relief texture (grayscale multiplier) baked from GEBCO; see
+/// `tools/gen_relief.py`. Sampled by the land mesh to give the map topographic
+/// depth. Theme-independent — load once.
+fn make_relief(ctx: &egui::Context) -> TextureHandle {
+    let bytes = include_bytes!("../assets/relief.png");
+    let gray = image::load_from_memory(bytes)
+        .expect("decode relief.png")
+        .to_luma8();
+    let (w, h) = gray.dimensions();
+    let mut rgba = Vec::with_capacity((w * h * 4) as usize);
+    for p in gray.pixels() {
+        let v = p[0];
+        rgba.extend_from_slice(&[v, v, v, 255]);
+    }
+    let img = egui::ColorImage::from_rgba_unmultiplied([w as usize, h as usize], &rgba);
+    ctx.load_texture("relief", img, TextureOptions::LINEAR)
+}
+
 /// Paint the chassis: vertical face gradient, then the translucent brushed
 /// stripes tiled over it.
 fn paint_chassis(painter: &egui::Painter, rect: Rect, pal: &Palette, brushed: &TextureHandle) {
@@ -206,88 +225,6 @@ fn key_cell(
         color,
     );
     ui.interact(rect, id, egui::Sense::click())
-}
-
-// ---------------------------------------------------------------------------
-// Polygon fill (ear-clipping) — for the concave coastline land mass.
-// ---------------------------------------------------------------------------
-
-fn cross(o: Pos2, a: Pos2, b: Pos2) -> f32 {
-    (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x)
-}
-
-fn point_in_tri(p: Pos2, a: Pos2, b: Pos2, c: Pos2) -> bool {
-    let d1 = cross(p, a, b);
-    let d2 = cross(p, b, c);
-    let d3 = cross(p, c, a);
-    let has_neg = d1 < 0.0 || d2 < 0.0 || d3 < 0.0;
-    let has_pos = d1 > 0.0 || d2 > 0.0 || d3 > 0.0;
-    !(has_neg && has_pos)
-}
-
-/// Fill a simple (possibly concave) polygon by ear clipping. egui's
-/// `convex_polygon` fans from vertex 0 and would spill across concavities.
-fn fill_polygon(painter: &egui::Painter, pts: &[Pos2], color: Color32) {
-    if pts.len() < 3 {
-        return;
-    }
-    let mut idx: Vec<usize> = (0..pts.len()).collect();
-    // Orient CCW (positive area) so a convex corner has cross > 0.
-    let area: f32 = (0..pts.len())
-        .map(|i| {
-            let a = pts[i];
-            let b = pts[(i + 1) % pts.len()];
-            a.x * b.y - b.x * a.y
-        })
-        .sum();
-    if area < 0.0 {
-        idx.reverse();
-    }
-
-    let mut mesh = Mesh::default();
-    for p in pts {
-        mesh.colored_vertex(*p, color);
-    }
-
-    let mut guard = 0;
-    while idx.len() > 3 && guard < 20_000 {
-        guard += 1;
-        let n = idx.len();
-        let mut clipped = false;
-        for i in 0..n {
-            let ia = idx[(i + n - 1) % n];
-            let ib = idx[i];
-            let ic = idx[(i + 1) % n];
-            let (a, b, c) = (pts[ia], pts[ib], pts[ic]);
-            if cross(a, b, c) <= 0.0 {
-                continue; // reflex corner — not an ear
-            }
-            // No other vertex inside triangle a-b-c?
-            let mut empty = true;
-            for &j in &idx {
-                if j == ia || j == ib || j == ic {
-                    continue;
-                }
-                if point_in_tri(pts[j], a, b, c) {
-                    empty = false;
-                    break;
-                }
-            }
-            if empty {
-                mesh.add_triangle(ia as u32, ib as u32, ic as u32);
-                idx.remove(i);
-                clipped = true;
-                break;
-            }
-        }
-        if !clipped {
-            break; // degenerate input — stop rather than loop forever
-        }
-    }
-    if idx.len() == 3 {
-        mesh.add_triangle(idx[0] as u32, idx[1] as u32, idx[2] as u32);
-    }
-    painter.add(Shape::mesh(mesh));
 }
 
 /// Draw a dashed polyline, keeping dash phase across segment joints.
@@ -643,6 +580,7 @@ fn draw_contacts(
     block: Rect,
     pal: &Palette,
     toggles: &mut [bool; 4],
+    relief: &TextureHandle,
 ) {
     let header = Rect::from_min_max(
         block.min,
@@ -652,7 +590,7 @@ fn draw_contacts(
     painter.text(
         Pos2::new(header.right() - 2.0, header.center().y),
         Align2::RIGHT_CENTER,
-        &format!("{} spots", pd::CONTACTS.len()),
+        &format!("{} spots", pd::WORKED.len()),
         mono(8.5),
         pal.sub,
     );
@@ -666,39 +604,99 @@ fn draw_contacts(
         Pos2::new(block.right(), footer.top() - pd::GAP),
     );
     recessed_screen(painter, screen, pal);
-    draw_map(painter, screen, pal);
+    draw_map(painter, screen, pal, relief);
     draw_footer(ui, painter, footer, pal, toggles);
 }
 
-fn draw_map(painter: &egui::Painter, screen: Rect, pal: &Palette) {
+/// Composite a translucent foreground over an opaque background → opaque color.
+fn over(fg: Color32, bg: Color32) -> Color32 {
+    let a = fg.a() as f32 / 255.0;
+    let m = |f: u8, b: u8| (f as f32 * a + b as f32 * (1.0 - a)).round() as u8;
+    Color32::from_rgb(m(fg.r(), bg.r()), m(fg.g(), bg.g()), m(fg.b(), bg.b()))
+}
+
+fn draw_map(painter: &egui::Painter, screen: Rect, pal: &Palette, relief: &TextureHandle) {
     if screen.width() < 24.0 || screen.height() < 24.0 {
         return;
     }
-    // SVG content area: padding t6 r8 b4 l8, then fit 393×190 (meet).
+    // SVG content area: padding t6 r8 b4 l8.
     let content = Rect::from_min_max(
         Pos2::new(screen.left() + 8.0, screen.top() + 6.0),
         Pos2::new(screen.right() - 8.0, screen.bottom() - 4.0),
     );
-    let scale = (content.width() / pd::MAP_W).min(content.height() / pd::MAP_H);
-    let draw = Vec2::new(pd::MAP_W * scale, pd::MAP_H * scale);
-    let origin = content.center() - draw * 0.5;
-    let p = |sx: f32, sy: f32| Pos2::new(origin.x + sx * scale, origin.y + sy * scale);
+
+    // Dynamic bounds: fit the box (in world/SVG units) spanning every plotted
+    // station plus home. Home is included but not centered, so it lands wherever
+    // the worked cluster puts it (e.g. contacts to the west → home biased right).
+    let mut pts: Vec<Vec2> = pd::WORKED
+        .iter()
+        .filter_map(|s| pd::station_lonlat(s.call, s.grid))
+        .map(|(lon, lat)| Vec2::new(pd::map_x(lon), pd::map_y(lat)))
+        .collect();
+    pts.push(Vec2::new(pd::map_x(pd::HOME_LON), pd::map_y(pd::HOME_LAT)));
+    let (mut minx, mut miny, mut maxx, mut maxy) = (f32::MAX, f32::MAX, f32::MIN, f32::MIN);
+    for v in &pts {
+        minx = minx.min(v.x); miny = miny.min(v.y);
+        maxx = maxx.max(v.x); maxy = maxy.max(v.y);
+    }
+    // Pad ~8% and guard against a degenerate (single-point) box.
+    let bw = (maxx - minx).max(1.0);
+    let bh = (maxy - miny).max(1.0);
+    minx -= bw * 0.08; maxx += bw * 0.08;
+    miny -= bh * 0.08; maxy += bh * 0.08;
+    let (bcx, bcy) = ((minx + maxx) * 0.5, (miny + maxy) * 0.5);
+    let scale = (content.width() / (maxx - minx)).min(content.height() / (maxy - miny));
+    let p = |sx: f32, sy: f32| {
+        Pos2::new(content.center().x + (sx - bcx) * scale, content.center().y + (sy - bcy) * scale)
+    };
     let proj = |lon: f32, lat: f32| p(pd::map_x(lon), pd::map_y(lat));
     let sl = |v: f32| v * scale; // svg length -> px
     let font = |sz: f32| mono(sz * scale);
-    let hfont = |sz: f32| heading(sz * scale);
 
     let map_painter = painter.with_clip_rect(screen.shrink(2.0));
     let painter = &map_painter;
 
-    // 1) land polygon
-    let land: Vec<Pos2> = pd::COAST.iter().map(|&(la, lo)| proj(lo, la)).collect();
-    fill_polygon(painter, &land, pal.map_land);
-    {
-        let mut closed = land.clone();
-        closed.push(land[0]);
-        painter.add(Shape::line(closed, Stroke::new(sl(0.6).max(0.5), pal.map_coast)));
+    // 1) basemap: pre-triangulated land + lakes (Natural Earth 50m, earcut offline).
+    let project = |verts: &[(f32, f32)]| -> Vec<Pos2> {
+        verts.iter().map(|&(la, lo)| proj(lo, la)).collect()
+    };
+    let stroke_rings = |pos: &[Pos2], rings: &[(u32, u32)], stroke: Stroke| {
+        for &(s, l) in rings {
+            let ring = &pos[s as usize..(s + l) as usize];
+            let mut closed = ring.to_vec();
+            closed.push(ring[0]);
+            painter.add(Shape::line(closed, stroke));
+        }
+    };
+
+    // Land fill is a textured mesh: each vertex carries a UV into the shaded-relief
+    // texture, and an opaque base tint that the relief texel multiplies — so the
+    // land lightness varies with terrain (mountains shaded, plains flat).
+    let land_base = over(pal.map_land, pal.screen_bg);
+    let lon_span = pd::RELIEF_LON1 - pd::RELIEF_LON0;
+    let lat_span = pd::RELIEF_LAT1 - pd::RELIEF_LAT0;
+    let land_pos = project(geo_data::LAND_VERTS);
+    let mut land_mesh = Mesh::with_texture(relief.id());
+    for (i, &(la, lo)) in geo_data::LAND_VERTS.iter().enumerate() {
+        let uv = Pos2::new((lo - pd::RELIEF_LON0) / lon_span, (pd::RELIEF_LAT1 - la) / lat_span);
+        land_mesh.vertices.push(egui::epaint::Vertex { pos: land_pos[i], uv, color: land_base });
     }
+    land_mesh.indices.extend_from_slice(geo_data::LAND_IDX);
+    painter.add(Shape::mesh(land_mesh));
+    stroke_rings(&land_pos, geo_data::LAND_RINGS, Stroke::new(sl(0.5).max(0.6), pal.map_coast));
+
+    // Lakes: translucent dark fill punches the land back down to water tone.
+    let lake_fill = Color32::from_rgba_unmultiplied(pal.screen_bg.r(), pal.screen_bg.g(), pal.screen_bg.b(), 220);
+    let lake_pos = project(geo_data::LAKES_VERTS);
+    let mut lake_mesh = Mesh::default();
+    for pos in &lake_pos {
+        lake_mesh.colored_vertex(*pos, lake_fill);
+    }
+    for t in geo_data::LAKES_IDX.chunks_exact(3) {
+        lake_mesh.add_triangle(t[0], t[1], t[2]);
+    }
+    painter.add(Shape::mesh(lake_mesh));
+    stroke_rings(&lake_pos, geo_data::LAKES_RINGS, Stroke::new(sl(0.4).max(0.5), pal.map_coast.gamma_multiply(0.7)));
 
     // 2) graticule
     let grat = pal.dim.gamma_multiply(0.25);
@@ -743,40 +741,33 @@ fn draw_map(painter: &egui::Painter, screen: Rect, pal: &Palette) {
         );
     }
 
-    // 5) region labels
-    painter.text(p(150.0, 11.0), Align2::LEFT_BOTTOM, "CANADA", hfont(5.2), pal.sub.gamma_multiply(0.85));
-    painter.text(p(185.0, 185.0), Align2::LEFT_BOTTOM, "MÉXICO", hfont(5.2), pal.sub.gamma_multiply(0.85));
-
-    // 6) contact spots
-    for c in pd::CONTACTS {
-        let pos = proj(c.lon, c.lat);
-        let sx = pd::map_x(c.lon);
-        match c.country {
-            pd::Country::Us => {
-                painter.circle_filled(pos, sl(2.4), pal.accent);
-            }
-            pd::Country::Ca => {
-                painter.circle(pos, sl(2.4), pal.screen_bg, Stroke::new(sl(1.1).max(0.8), pal.accent));
-            }
-            pd::Country::Mx => {
-                painter.circle_filled(pos, sl(2.2), pal.sub);
-            }
-        }
-        let right = sx > 340.0;
-        let lx = sx + if right { -3.5 } else { 3.5 };
-        let ly = pd::map_y(c.lat) + if pd::map_y(c.lat) < 12.0 { 6.0 } else { -3.0 };
+    // 5) worked spots (filled) — position inferred from each station's grid.
+    // Marker/label sized in px (with clamp) so they stay readable at any zoom.
+    let spot_r = sl(2.4).clamp(2.0, 3.6);
+    let label_font = mono(sl(4.8).clamp(5.0, 8.0));
+    for s in pd::WORKED {
+        let Some((lon, lat)) = pd::station_lonlat(s.call, s.grid) else { continue };
+        let pos = proj(lon, lat);
+        painter.circle_filled(pos, spot_r, pal.accent);
+        // Flip the label to the inboard side near the right/top edges so it stays on-screen.
+        let right = pos.x > content.right() - 42.0;
+        let near_top = pos.y < content.top() + 12.0;
+        let off = Vec2::new(
+            if right { -(spot_r + 1.5) } else { spot_r + 1.5 },
+            if near_top { spot_r + 5.0 } else { -(spot_r + 1.0) },
+        );
         let align = if right { Align2::RIGHT_BOTTOM } else { Align2::LEFT_BOTTOM };
-        painter.text(p(lx, ly), align, c.call, font(4.8), pal.body);
+        painter.text(pos + off, align, s.call, label_font.clone(), pal.body);
     }
 
-    // 7) QTH marker
-    let hx = pd::map_x(pd::HOME_LON);
-    let hy = pd::map_y(pd::HOME_LAT);
-    painter.circle(home, sl(4.6), Color32::TRANSPARENT, Stroke::new(sl(1.1).max(0.8), pal.accent));
-    painter.line_segment([p(hx - 6.0, hy), p(hx + 6.0, hy)], Stroke::new(sl(0.8).max(0.6), pal.accent));
-    painter.line_segment([p(hx, hy - 6.0), p(hx, hy + 6.0)], Stroke::new(sl(0.8).max(0.6), pal.accent));
-    painter.circle_filled(home, sl(1.5), pal.accent);
-    painter.text(p(hx + 6.0, hy - 6.0), Align2::LEFT_BOTTOM, "QTH", hfont(4.8), pal.accent);
+    // 6) home / QTH marker — the strongest indicator, drawn last so it sits on top.
+    let ring_r = sl(4.6).clamp(5.0, 7.0);
+    let arm = ring_r + 2.5;
+    painter.circle(home, ring_r, Color32::TRANSPARENT, Stroke::new(1.4, pal.accent));
+    painter.line_segment([Pos2::new(home.x - arm, home.y), Pos2::new(home.x + arm, home.y)], Stroke::new(1.0, pal.accent));
+    painter.line_segment([Pos2::new(home.x, home.y - arm), Pos2::new(home.x, home.y + arm)], Stroke::new(1.0, pal.accent));
+    painter.circle_filled(home, (spot_r + 0.8).max(2.6), pal.accent);
+    painter.text(Pos2::new(home.x + arm, home.y - arm), Align2::LEFT_BOTTOM, "QTH", heading(sl(4.8).clamp(6.0, 9.0)), pal.accent);
 }
 
 /// Flat tactical footer: square toggles (solid = on, hollow = off) + SNR bars.
@@ -864,6 +855,7 @@ struct Tactical<'a> {
     scan: &'a mut Scan,
     toggles: &'a mut [bool; 4],
     waterslide: &'a mut WaterslidePanel,
+    relief: &'a TextureHandle,
     dt: f64,
 }
 
@@ -881,7 +873,7 @@ impl<'a> Behavior<Pane> for Tactical<'a> {
             }
             PaneKind::Log => draw_log(&painter, block, pal),
             PaneKind::BandScan => draw_band_scan(ui, &painter, block, pal, self.scan),
-            PaneKind::Contacts => draw_contacts(ui, &painter, block, pal, self.toggles),
+            PaneKind::Contacts => draw_contacts(ui, &painter, block, pal, self.toggles, self.relief),
         }
         UiResponse::None
     }
@@ -956,6 +948,7 @@ struct App {
     tree: Tree<Pane>,
     brushed: Option<TextureHandle>,
     brushed_is_dark: bool,
+    relief: Option<TextureHandle>,
     visuals_set_for: Option<bool>,
     /// If set (via MARTIAN_SHOT=path), render a few frames, save a PNG, exit.
     shot_path: Option<String>,
@@ -979,6 +972,7 @@ impl App {
             tree: build_tree(),
             brushed: None,
             brushed_is_dark: !dark,
+            relief: None,
             visuals_set_for: None,
             shot_path: std::env::var("MARTIAN_SHOT").ok(),
             frame: 0,
@@ -1012,6 +1006,10 @@ impl eframe::App for App {
             self.brushed_is_dark = self.dark;
         }
         let brushed = self.brushed.clone().unwrap();
+        if self.relief.is_none() {
+            self.relief = Some(make_relief(&ctx));
+        }
+        let relief = self.relief.clone().unwrap();
 
         let dt = ctx.input(|i| i.stable_dt);
         self.tick_scan(dt);
@@ -1051,6 +1049,7 @@ impl eframe::App for App {
                     scan: &mut self.scan,
                     toggles: &mut self.toggles,
                     waterslide: &mut self.waterslide,
+                    relief: &relief,
                     dt: dt as f64,
                 };
                 self.tree.ui(&mut behavior, ui);

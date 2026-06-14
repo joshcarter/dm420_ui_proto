@@ -74,21 +74,92 @@ pub const BORDER_LON_END: f32 = -95.0;
 //   rx = (d / 85.0) * KX * S ,  ry = (d / 111.0) * S
 pub const RING_KM: &[f32] = &[750.0, 1500.0];
 
-// ============================================================ CONTACTS (fake)
-#[derive(Clone, Copy)] pub enum Country { Us, Ca, Mx }
-// Marker style: US = filled accent dot (r 2.4); CA = hollow ring (accent stroke,
-// screen_bg fill, r 2.4); MX = filled `sub`-color dot (r 2.2).
-pub struct Contact { pub call: &'static str, pub lat: f32, pub lon: f32, pub country: Country }
-use Country::*;
-pub const CONTACTS: &[Contact] = &[
-    Contact{call:"K7RA", lat:47.6, lon:-122.3, country:Us}, Contact{call:"K7UT", lat:40.7, lon:-111.9, country:Us},
-    Contact{call:"W7PH", lat:33.4, lon:-112.1, country:Us}, Contact{call:"K5ED", lat:32.8, lon:-96.8, country:Us},
-    Contact{call:"N5JR", lat:29.8, lon:-95.4, country:Us},  Contact{call:"W9XYZ",lat:41.9, lon:-87.7, country:Us},
-    Contact{call:"K1ABC",lat:42.4, lon:-71.1, country:Us},  Contact{call:"W4GH", lat:33.8, lon:-84.4, country:Us},
-    Contact{call:"N4FL", lat:25.8, lon:-80.2, country:Us},  Contact{call:"VE7CC",lat:49.2, lon:-123.1,country:Ca},
-    Contact{call:"VE6AO",lat:51.0, lon:-114.1,country:Ca},  Contact{call:"VE4XX",lat:49.9, lon:-97.1, country:Ca},
-    Contact{call:"VE3EN",lat:43.7, lon:-79.4, country:Ca},  Contact{call:"XE2OK",lat:25.7, lon:-100.3,country:Mx},
-    Contact{call:"XE2HW",lat:28.6, lon:-106.1,country:Mx},  Contact{call:"XE1RC",lat:19.4, lon:-99.1, country:Mx},
+// ============================================================ TERRAIN (shaded relief)
+// The map's depth comes from a baked shaded-relief texture (assets/relief.png,
+// see tools/gen_relief.py) sampled by the land mesh. These bounds must match the
+// crop box in gen_relief.py so land lon/lat maps to the right texel.
+pub const RELIEF_LON0: f32 = -130.0;
+pub const RELIEF_LON1: f32 = -58.0;
+pub const RELIEF_LAT0: f32 = 8.0;
+pub const RELIEF_LAT1: f32 = 62.0;
+
+// ============================================================ MAIDENHEAD GRID → LON/LAT
+/// A decoded Maidenhead locator: cell CENTER plus the size of the smallest cell
+/// that was parsed (used to spread co-grid stations without leaving the square).
+pub struct GridLoc { pub lon: f32, pub lat: f32, pub lon_size: f32, pub lat_size: f32 }
+
+/// Parse a 4- or 6-character Maidenhead grid (e.g. `FN31`, `DN70KA`) to a
+/// `GridLoc` at the cell center. Returns `None` for malformed input so callers
+/// can skip stations whose position can't be inferred.
+pub fn grid_to_lonlat(grid: &str) -> Option<GridLoc> {
+    let g = grid.trim().as_bytes();
+    if g.len() != 4 && g.len() != 6 { return None; }
+    let field_lon = (g[0].to_ascii_uppercase() as i32) - b'A' as i32; // A..R
+    let field_lat = (g[1].to_ascii_uppercase() as i32) - b'A' as i32;
+    if !(0..18).contains(&field_lon) || !(0..18).contains(&field_lat) { return None; }
+    let sq_lon = (g[2] as i32) - b'0' as i32; // 0..9
+    let sq_lat = (g[3] as i32) - b'0' as i32;
+    if !(0..10).contains(&sq_lon) || !(0..10).contains(&sq_lat) { return None; }
+
+    // SW corner after field + square.
+    let mut lon = -180.0 + field_lon as f32 * 20.0 + sq_lon as f32 * 2.0;
+    let mut lat = -90.0 + field_lat as f32 * 10.0 + sq_lat as f32 * 1.0;
+    let (mut lon_size, mut lat_size) = (2.0_f32, 1.0_f32);
+
+    if g.len() == 6 {
+        let sub_lon = (g[4].to_ascii_uppercase() as i32) - b'A' as i32; // A..X
+        let sub_lat = (g[5].to_ascii_uppercase() as i32) - b'A' as i32;
+        if !(0..24).contains(&sub_lon) || !(0..24).contains(&sub_lat) { return None; }
+        lon_size = 2.0 / 24.0; // 5′
+        lat_size = 1.0 / 24.0; // 2.5′
+        lon += sub_lon as f32 * lon_size;
+        lat += sub_lat as f32 * lat_size;
+    }
+    // Move from SW corner to cell center.
+    Some(GridLoc { lon: lon + lon_size * 0.5, lat: lat + lat_size * 0.5, lon_size, lat_size })
+}
+
+/// Position a station from its callsign + grid: the grid-cell center plus a small
+/// deterministic per-callsign offset (±0.4 of the cell) so co-grid stations don't
+/// overlap. Stable across redraws (hash-based, no randomness). `None` if the grid
+/// can't be parsed.
+pub fn station_lonlat(call: &str, grid: &str) -> Option<(f32, f32)> {
+    let GridLoc { lon, lat, lon_size, lat_size } = grid_to_lonlat(grid)?;
+    let h = fnv1a(call);
+    let frac = |bits: u32| ((bits & 0xffff) as f32 / 65535.0 - 0.5) * 0.8; // −0.4..0.4
+    Some((lon + frac(h) * lon_size, lat + frac(h >> 16) * lat_size))
+}
+
+#[inline]
+fn fnv1a(s: &str) -> u32 {
+    let mut h: u32 = 0x811c_9dc5;
+    for b in s.as_bytes() {
+        h ^= *b as u32;
+        h = h.wrapping_mul(0x0100_0193);
+    }
+    h
+}
+
+// ============================================================ LOG BOOK SPOTS (fake)
+/// A worked station as it appears on the map; position is inferred from `grid`.
+pub struct LogSpot { pub call: &'static str, pub grid: &'static str }
+// Phase 1: all entries are worked (filled marker). ~13 stations spread across
+// North America. Phase 2 adds a separate unworked/heard list with last-heard times.
+pub const WORKED: &[LogSpot] = &[
+    LogSpot{call:"K7RA", grid:"CN87"}, // Seattle, WA
+    LogSpot{call:"K6XX", grid:"CM97"}, // Bay Area, CA
+    LogSpot{call:"W7PH", grid:"DM33"}, // Phoenix, AZ
+    LogSpot{call:"K0DEN",grid:"DM79"}, // Denver, CO
+    LogSpot{call:"K5ED", grid:"EM12"}, // Dallas, TX
+    LogSpot{call:"N5JR", grid:"EL29"}, // Houston, TX
+    LogSpot{call:"W9XYZ",grid:"EN61"}, // Detroit, MI
+    LogSpot{call:"K1ABC",grid:"FN31"}, // Connecticut
+    LogSpot{call:"W2NYC",grid:"FN20"}, // New York, NY
+    LogSpot{call:"N4FL", grid:"EL96"}, // Miami, FL
+    LogSpot{call:"VE3EN",grid:"FN25"}, // Toronto, ON
+    LogSpot{call:"VE6AO",grid:"DO21"}, // Calgary, AB
+    LogSpot{call:"XE2OK",grid:"DL95"}, // Monterrey, MX
+    LogSpot{call:"XE1RC",grid:"EK09"}, // Mexico City, MX
 ];
 
 /// Great-circle distance (km) — used to label "Best DX".
@@ -101,23 +172,8 @@ pub fn haversine_km(la1: f32, lo1: f32, la2: f32, lo2: f32) -> f32 {
     2.0 * re * a.sqrt().min(1.0).asin()
 }
 
-// ============================================================ COASTLINE (fake/simplified)
-// (lat, lon) waypoints, one closed polygon: West Coast → Baja + Gulf of California
-// → mainland Mexico → Gulf of Mexico → Florida → East Coast → Atlantic Canada →
-// straight top edge back. Project each point with map_x/map_y, fill with land
-// color, stroke 0.6 with the coastline color. Low-detail on purpose (no Great
-// Lakes / Hudson Bay).
-pub const COAST: &[(f32, f32)] = &[
-    (54.0,-132.0),(50.5,-128.0),(49.2,-123.6),(46.2,-124.0),(42.0,-124.3),(40.4,-124.4),(38.0,-123.0),
-    (36.6,-121.9),(34.4,-120.5),(33.0,-117.4),(32.5,-117.2),(31.5,-116.6),(30.0,-115.8),(28.0,-114.5),
-    (25.2,-112.0),(23.0,-110.0),(24.0,-110.3),(27.0,-111.3),(30.0,-113.0),(31.5,-114.5),(31.3,-113.3),
-    (28.8,-111.6),(26.5,-109.3),(23.2,-106.4),(20.6,-105.4),(17.8,-101.8),(16.0,-98.6),(16.0,-94.6),
-    (18.2,-94.5),(19.5,-96.2),(22.0,-97.5),(25.9,-97.2),(28.0,-96.5),(29.7,-93.8),(29.0,-90.0),
-    (30.3,-88.9),(30.3,-86.5),(29.7,-84.0),(28.0,-82.8),(25.9,-81.7),(25.2,-80.4),(27.0,-80.1),
-    (29.5,-81.0),(31.5,-81.0),(33.9,-78.2),(35.2,-75.5),(37.0,-76.0),(38.9,-74.9),(40.5,-74.0),
-    (41.4,-71.0),(42.0,-70.2),(43.5,-70.3),(44.6,-67.5),(45.2,-66.0),(44.7,-63.5),(46.3,-60.3),
-    (47.8,-59.0),(48.5,-54.5),(51.5,-55.5),(54.0,-57.0),
-];
+// Coastline/land/lakes geometry now lives in `geo_data.rs` (Natural Earth 50m,
+// pre-triangulated). See `tools/gen_geo.py` to regenerate.
 
 // ============================================================ WATERFALL DECODE RAIL (fake)
 // Left panel: a sideways waterfall image with a decode rail down its right edge.
@@ -144,3 +200,47 @@ pub const BANDS: &[(&str,u32,u32)] = &[ // (band, heard, unworked)
 ];
 // Columns: left = [40m, 20m], right = [15m, 10m].
 // Scan cycles activeBand 0→3 every 2.5 s, then returns to idle ("Last scan: just now").
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn near(a: f32, b: f32, tol: f32) -> bool { (a - b).abs() <= tol }
+
+    #[test]
+    fn grid_centers() {
+        // DN70 (home field/square) → center ≈ −105.0 / 40.5
+        let g = grid_to_lonlat("DN70").unwrap();
+        assert!(near(g.lon, -105.0, 0.01), "lon {}", g.lon);
+        assert!(near(g.lat, 40.5, 0.01), "lat {}", g.lat);
+        // FN31 (Connecticut) → center ≈ −73.0 / 41.5
+        let g = grid_to_lonlat("FN31").unwrap();
+        assert!(near(g.lon, -73.0, 0.01), "lon {}", g.lon);
+        assert!(near(g.lat, 41.5, 0.01), "lat {}", g.lat);
+        // 6-char subsquare narrows the cell and stays inside the 4-char square.
+        let s = grid_to_lonlat("DN70KA").unwrap();
+        assert!(s.lon_size < 0.1 && s.lat_size < 0.05);
+        assert!(near(s.lon, -105.0, 1.0) && near(s.lat, 40.0, 0.5));
+    }
+
+    #[test]
+    fn grid_rejects_malformed() {
+        for bad in ["", "F", "FN3", "FN3X", "FN311", "ZZ99", "F931"] {
+            assert!(grid_to_lonlat(bad).is_none(), "expected None for {bad:?}");
+        }
+    }
+
+    #[test]
+    fn station_offset_stable_and_in_cell() {
+        let g = grid_to_lonlat("FN31").unwrap();
+        let a = station_lonlat("K1ABC", "FN31").unwrap();
+        let b = station_lonlat("K1ABC", "FN31").unwrap();
+        assert_eq!(a, b, "must be deterministic across calls");
+        // Offset stays within ±0.4 of the cell, so the point never leaves the square.
+        assert!((a.0 - g.lon).abs() <= 0.4 * g.lon_size + 1e-4);
+        assert!((a.1 - g.lat).abs() <= 0.4 * g.lat_size + 1e-4);
+        // Different callsigns in the same grid get different spots.
+        assert_ne!(a, station_lonlat("W2NYC", "FN31").unwrap());
+        assert!(station_lonlat("NOGRID", "ZZ99").is_none());
+    }
+}
