@@ -392,16 +392,21 @@ fn draw_waterfall(
         block.min,
         Pos2::new(block.right(), block.top() + pd::HEADER_ROW_H),
     );
-    panel_header(painter, header, pal, "Waterfall", "0–3000 Hz · time → left");
-    // right status: ● SPLIT  AGC
+    panel_header(painter, header, pal, "FT8", "0–3000 Hz · time → left");
+    // right side: prominent tuned-frequency readout
     let cy = header.center().y;
     let mut rx = header.right() - 2.0;
-    painter.text(Pos2::new(rx, cy), Align2::RIGHT_CENTER, "AGC", mono(8.0), pal.sub);
-    rx -= measure(painter, "AGC", mono(8.0)) + 9.0;
-    painter.text(Pos2::new(rx, cy), Align2::RIGHT_CENTER, "SPLIT", mono(8.0), pal.sub);
-    rx -= measure(painter, "SPLIT", mono(8.0)) + 5.0;
-    painter.circle_filled(Pos2::new(rx - 2.5, cy), 4.5, pal.accent.gamma_multiply(0.35));
-    painter.circle_filled(Pos2::new(rx - 2.5, cy), 2.5, pal.accent);
+    painter.text(Pos2::new(rx, cy), Align2::RIGHT_CENTER, "MHz", mono(8.5), pal.sub);
+    rx -= measure(painter, "MHz", mono(8.5)) + 5.0;
+    engraved_text(
+        painter,
+        Pos2::new(rx, cy),
+        "14.074",
+        heading_bold(15.0),
+        pal.accent,
+        shadow(pal),
+        Align2::RIGHT_CENTER,
+    );
 
     // ticker (bottom) + screen (fills between header and ticker).
     let ticker = Rect::from_min_max(

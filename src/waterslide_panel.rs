@@ -26,12 +26,13 @@ const W: usize = 520;
 const H: usize = COL_H; // 500
 const PPS: f64 = W as f64 / 30.0;
 
-// Design-space x bands inside the screen (text | divider | fft | scale).
+// Design-space x bands inside the screen (text | divider | fft). The fft fills
+// to the right edge — the old dedicated ±Hz scale lane is gone; the gridlines
+// carry their own labels instead.
 const X_TEXT_R: f32 = 520.0; // right edge of the text lane == "now" centre
 const X_FFT_L: f32 = 522.0;
 const X_FFT_R: f32 = 1042.0;
-const X_SCALE_L: f32 = 1042.0;
-const DESIGN_W: f32 = 1118.0;
+const DESIGN_W: f32 = 1042.0;
 
 /// Palette the panel reads. Built from the app's active `Palette` so it flips on
 /// the existing light/dark toggle; the colormap is the only new token.
@@ -234,8 +235,10 @@ impl WaterslidePanel {
         let uv = Rect::from_min_max(Pos2::new(0.0, 0.0), Pos2::new(1.0, 1.0));
         painter.image(tex.id(), fft_rect, uv, Color32::WHITE);
 
-        // graticule: faint horizontal frequency lines across text + fft
-        for off in [1500, 1000, 500, 0, -500, -1000, -1500] {
+        // graticule: faint horizontal frequency lines across text + fft. Each
+        // ±Hz line is labelled just above its own rule (the tuned centre is
+        // shown in the panel header, so the 0 line stays unlabelled).
+        for off in [1500i32, 1000, 500, 0, -500, -1000, -1500] {
             let y = 250.0 - off as f32 / 3000.0 * H as f32;
             let (col, wdt) = if off == 0 {
                 (theme.grid_mid, 1.4)
@@ -243,6 +246,16 @@ impl WaterslidePanel {
                 (theme.grid, 1.0)
             };
             painter.line_segment([p(0.0, y), p(X_FFT_R, y)], Stroke::new(wdt, col));
+            if off != 0 {
+                let label = format!("{}{}", if off > 0 { "+" } else { "\u{2212}" }, off.abs());
+                painter.text(
+                    p(X_FFT_R - 8.0, y - 3.0),
+                    Align2::RIGHT_BOTTOM,
+                    label,
+                    FontId::monospace(9.0 * fscale),
+                    theme.legend,
+                );
+            }
         }
 
         // 4) decoded text lane (left half), clipped, scrolling left
@@ -271,23 +284,6 @@ impl WaterslidePanel {
 
         // 5) NOW divider at the centre
         painter.line_segment([p(521.0, 0.0), p(521.0, H as f32)], Stroke::new(2.0, theme.accent));
-
-        // 6) frequency scale (compact, far right)
-        for (off, label) in [
-            (1500, "+1500"),
-            (1000, "+1000"),
-            (500, "+500"),
-            (0, "14.074"),
-            (-500, "\u{2212}500"),
-            (-1000, "\u{2212}1000"),
-            (-1500, "\u{2212}1500"),
-        ] {
-            let y = 250.0 - off as f32 / 3000.0 * H as f32;
-            let mid = off == 0;
-            let col = if mid { theme.accent } else { theme.legend };
-            let size = if mid { 12.0 } else { 9.0 } * fscale;
-            painter.text(p(X_SCALE_L + 6.0, y), Align2::LEFT_CENTER, label, FontId::monospace(size), col);
-        }
 
         ui.ctx().request_repaint(); // keep the animation running
     }
