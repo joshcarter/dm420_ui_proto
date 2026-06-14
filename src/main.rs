@@ -892,6 +892,12 @@ impl<'a> Behavior<Pane> for Tactical<'a> {
         pd::VGROOVE_W // grooves: chassis shows through between panes
     }
 
+    fn min_size(&self) -> f32 {
+        // No pane may be dragged below this — enough for the panel header plus a
+        // modest slice of inner screen. Matches the pinned Band Scan height.
+        pd::BANDSCAN_H
+    }
+
     fn simplification_options(&self) -> egui_tiles::SimplificationOptions {
         egui_tiles::SimplificationOptions {
             all_panes_must_have_tabs: false,
@@ -908,7 +914,15 @@ impl<'a> Behavior<Pane> for Tactical<'a> {
     }
 }
 
-fn build_tree() -> Tree<Pane> {
+/// IDs needed after construction to keep Band Scan pinned to a fixed height and
+/// to clamp the column widths.
+struct TreeIds {
+    root: TileId,
+    right: TileId,
+    band: TileId,
+}
+
+fn build_tree() -> (Tree<Pane>, TreeIds) {
     let mut tiles = Tiles::default();
     let waterfall = tiles.insert_pane(Pane::new("Waterfall", PaneKind::Waterfall));
     let log = tiles.insert_pane(Pane::new("Log Book", PaneKind::Log));
@@ -929,7 +943,66 @@ fn build_tree() -> Tree<Pane> {
         lin.shares.set_share(waterfall, pd::LEFT_COL_W);
         lin.shares.set_share(right, pd::PANEL_W - pd::LEFT_COL_W);
     }
-    Tree::new("martian_tree", root, tiles)
+    (
+        Tree::new("martian_tree", root, tiles),
+        TreeIds { root, right, band },
+    )
+}
+
+/// Clamp the two-column root split so neither the Waterfall column nor the
+/// right-hand stack can be dragged narrower than `pd::MIN_PANEL_W`. egui_tiles'
+/// `min_size()` is a single scalar shared by width and height (we use it for the
+/// 128px height floor), so the wider width minimum is enforced here each frame
+/// by rewriting the horizontal shares — same approach as `pin_band_height`.
+fn enforce_min_width(tree: &mut Tree<Pane>, root: TileId, min_px: f32, gap: f32) {
+    let Some(rect) = tree.tiles.rect(root) else {
+        return;
+    };
+    if let Some(Tile::Container(Container::Linear(lin))) = tree.tiles.get_mut(root) {
+        if lin.children.len() != 2 {
+            return;
+        }
+        let avail = (rect.width() - gap).max(1.0);
+        // Keep feasible if the window is narrower than two minimums.
+        let min_px = min_px.min(avail / 2.0);
+        let (left, right) = (lin.children[0], lin.children[1]);
+        let total = (lin.shares[left] + lin.shares[right]).max(f32::EPSILON);
+        let left_px = avail * lin.shares[left] / total;
+        if left_px < min_px {
+            lin.shares.set_share(left, min_px);
+            lin.shares.set_share(right, avail - min_px);
+        } else if avail - left_px < min_px {
+            lin.shares.set_share(left, avail - min_px);
+            lin.shares.set_share(right, min_px);
+        }
+    }
+}
+
+/// Force the Band Scan pane to a fixed pixel height (`pd::BANDSCAN_H`) while
+/// letting Log Book and Contacts keep sharing the remaining height. egui_tiles
+/// lays out a Linear container purely by *shares*, so each frame we solve for
+/// the band share that yields the target height given the container's current
+/// size, leaving the other two children's shares (and thus their ratio) intact.
+fn pin_band_height(tree: &mut Tree<Pane>, ids: &TreeIds, gap: f32) {
+    // The container rect from the previous layout (None on the very first frame).
+    let Some(rect) = tree.tiles.rect(ids.right) else {
+        return;
+    };
+    if let Some(Tile::Container(Container::Linear(lin))) = tree.tiles.get_mut(ids.right) {
+        let num_gaps = lin.children.len().saturating_sub(1) as f32;
+        let avail = (rect.height() - gap * num_gaps).max(1.0);
+        // Desired fraction of the available height for the band pane.
+        let frac = (pd::BANDSCAN_H / avail).clamp(0.05, 0.9);
+        // Sum of the other children's shares; band's share is solved so that
+        // band / (band + rest) == frac.
+        let rest: f32 = lin
+            .children
+            .iter()
+            .filter(|&&c| c != ids.band)
+            .map(|&c| lin.shares[c])
+            .sum();
+        lin.shares.set_share(ids.band, rest * frac / (1.0 - frac));
+    }
 }
 
 // =====================================================================
@@ -950,6 +1023,7 @@ struct App {
     toggles: [bool; 4], // footer DX ONLY / CQ / ALERT / LOG
     waterslide: WaterslidePanel,
     tree: Tree<Pane>,
+    tree_ids: TreeIds,
     brushed: Option<TextureHandle>,
     brushed_is_dark: bool,
     relief: Option<TextureHandle>,
@@ -962,6 +1036,7 @@ struct App {
 impl App {
     fn new() -> Self {
         let dark = std::env::var("MARTIAN_LIGHT").is_err();
+        let (tree, tree_ids) = build_tree();
         Self {
             dark,
             edit_mode: false,
@@ -973,7 +1048,8 @@ impl App {
             },
             toggles: [true, false, false, true], // DX ONLY + LOG on, per reference
             waterslide: WaterslidePanel::new(7200.0),
-            tree: build_tree(),
+            tree,
+            tree_ids,
             brushed: None,
             brushed_is_dark: !dark,
             relief: None,
@@ -1059,6 +1135,8 @@ impl eframe::App for App {
                     relief: &relief,
                     dt: dt as f64,
                 };
+                enforce_min_width(&mut self.tree, self.tree_ids.root, pd::MIN_PANEL_W, pd::VGROOVE_W);
+                pin_band_height(&mut self.tree, &self.tree_ids, pd::VGROOVE_W);
                 self.tree.ui(&mut behavior, ui);
             });
 

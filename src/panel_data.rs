@@ -24,8 +24,13 @@ pub const HEADER_GAP: f32 = 6.0;    // gap between title row and recessed screen
 
 // Right-column panel heights (top→bottom). MAP is flex and fills the rest (~228).
 pub const LOG_H: f32 = 142.0;
-pub const BANDSCAN_H: f32 = 112.0;  // "half height" panel
+// Band Scan is pinned to this exact pixel height (not resizable): tall enough
+// for the two band rows (2×30 + 7 gap = 67) plus header/gap and ~9px of screen
+// padding top & bottom. See `pin_band_height`.
+pub const BANDSCAN_H: f32 = 128.0;
 pub const FOOTER_H: f32 = 30.0;
+// No panel column may be dragged narrower than this. See `enforce_min_width`.
+pub const MIN_PANEL_W: f32 = 256.0;
 // Left column: header(24) + screen(flex) + ticker(30, gap 8). Ticker height is
 // matched to FOOTER so the waterfall + contacts recessed screens bottom-align.
 pub const TICKER_H: f32 = 30.0;
