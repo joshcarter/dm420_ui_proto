@@ -13,8 +13,18 @@ pub fn heading_family() -> FontFamily {
     FontFamily::Name("heading".into())
 }
 
+/// Heavier heading family (Chakra Petch 700) for callsigns, band numerals, the
+/// clock readouts, and lit toggle keys — the design's weight-700 elements.
+pub fn heading_bold_family() -> FontFamily {
+    FontFamily::Name("heading_bold".into())
+}
+
 pub fn heading(size: f32) -> FontId {
     FontId::new(size, heading_family())
+}
+
+pub fn heading_bold(size: f32) -> FontId {
+    FontId::new(size, heading_bold_family())
 }
 
 pub fn mono(size: f32) -> FontId {
@@ -33,10 +43,8 @@ pub const SPINE_W: f32 = 3.0;
 pub const SPINE_H: f32 = 14.0;
 pub const TOGGLE_SQ: f32 = 10.0;
 pub const TOGGLE_STROKE: f32 = 1.5;
-pub const HEADER_STRIP_H: f32 = 46.0;
-pub const PANE_HEADER_H: f32 = 24.0;
-pub const FOOTER_H: f32 = 30.0;
-pub const GAP_WIDTH: f32 = 3.0; // groove between panes — chassis shows through
+// Panel/layout geometry (TOPBAR_H, FOOTER_H, header rows, gaps) lives in
+// `panel_data`, which owns the 960×600 panel layout.
 
 // ---------------------------------------------------------------------------
 // Palette
@@ -60,6 +68,11 @@ pub struct Palette {
     pub lcd_top: Color32,
     pub lcd_bottom: Color32,
     pub lcd_text: Color32,
+    /// Text drawn ON an accent fill (lit toggle keys / Scan button).
+    pub on_accent: Color32,
+    /// Contacts-map land polygon fill + coastline stroke.
+    pub map_land: Color32,
+    pub map_coast: Color32,
     pub is_dark: bool,
 }
 
@@ -87,6 +100,9 @@ pub const GRAPHITE: Palette = Palette {
     lcd_top: rgb(0x1C, 0x14, 0x07),
     lcd_bottom: rgb(0x0D, 0x0A, 0x04),
     lcd_text: rgb(0xFF, 0xB2, 0x4D),
+    on_accent: rgb(0x1D, 0x14, 0x08),
+    map_land: rgba(255, 238, 214, 14), // rgba(...,0.055)
+    map_coast: rgba(247, 160, 60, 102), // rgba(...,0.40)
     is_dark: true,
 };
 
@@ -107,6 +123,9 @@ pub const SILVER: Palette = Palette {
     lcd_top: rgb(0xE8, 0xDC, 0xC0),
     lcd_bottom: rgb(0xD4, 0xC6, 0x9E),
     lcd_text: rgb(0x3A, 0x2A, 0x10),
+    on_accent: rgb(0xFD, 0xF6, 0xEC),
+    map_land: rgba(95, 62, 20, 26), // rgba(...,0.10)
+    map_coast: rgba(150, 80, 10, 115), // rgba(...,0.45)
     is_dark: false,
 };
 
