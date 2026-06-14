@@ -88,12 +88,17 @@ pub const RELIEF_LAT1: f32 = 62.0;
 /// that was parsed (used to spread co-grid stations without leaving the square).
 pub struct GridLoc { pub lon: f32, pub lat: f32, pub lon_size: f32, pub lat_size: f32 }
 
-/// Parse a 4- or 6-character Maidenhead grid (e.g. `FN31`, `DN70KA`) to a
-/// `GridLoc` at the cell center. Returns `None` for malformed input so callers
-/// can skip stations whose position can't be inferred.
+/// Parse a Maidenhead grid (e.g. `FN31`, `DN70KA`, `DN70KA12`) to a `GridLoc` at
+/// the cell center. Accepts the 4-, 6-, and 8-char forms FT8 carries, decoding to
+/// subsquare (6-char) precision and ignoring any extended-square tail. Returns
+/// `None` for malformed input so callers can skip stations they can't position.
 pub fn grid_to_lonlat(grid: &str) -> Option<GridLoc> {
     let g = grid.trim().as_bytes();
-    if g.len() != 4 && g.len() != 6 { return None; }
+    let g = match g.len() {
+        4 => g,
+        6 | 8 => &g[..6],
+        _ => return None,
+    };
     let field_lon = (g[0].to_ascii_uppercase() as i32) - b'A' as i32; // A..R
     let field_lat = (g[1].to_ascii_uppercase() as i32) - b'A' as i32;
     if !(0..18).contains(&field_lon) || !(0..18).contains(&field_lat) { return None; }
@@ -125,14 +130,20 @@ pub fn grid_to_lonlat(grid: &str) -> Option<GridLoc> {
 /// can't be parsed.
 pub fn station_lonlat(call: &str, grid: &str) -> Option<(f32, f32)> {
     let GridLoc { lon, lat, lon_size, lat_size } = grid_to_lonlat(grid)?;
-    let h = fnv1a(call);
-    let frac = |bits: u32| ((bits & 0xffff) as f32 / 65535.0 - 0.5) * 0.8; // −0.4..0.4
-    Some((lon + frac(h) * lon_size, lat + frac(h >> 16) * lat_size))
+    // Two independent hashes (distinct seeds) so the lon/lat offsets don't share a
+    // bit window — a single 32-bit FNV word concentrates entropy in its low bits.
+    let frac = |h: u32| ((h & 0xffff) as f32 / 65535.0 - 0.5) * 0.8; // −0.4..0.4
+    Some((
+        lon + frac(fnv1a(call, 0x811c_9dc5)) * lon_size,
+        lat + frac(fnv1a(call, 0x517c_c1b7)) * lat_size,
+    ))
 }
 
+/// FNV-1a 32-bit hash from an explicit offset basis (`seed`) — fast and stable,
+/// used only to derive deterministic positional jitter for co-grid callsigns.
 #[inline]
-fn fnv1a(s: &str) -> u32 {
-    let mut h: u32 = 0x811c_9dc5;
+fn fnv1a(s: &str, seed: u32) -> u32 {
+    let mut h = seed;
     for b in s.as_bytes() {
         h ^= *b as u32;
         h = h.wrapping_mul(0x0100_0193);
@@ -217,15 +228,22 @@ mod tests {
         let g = grid_to_lonlat("FN31").unwrap();
         assert!(near(g.lon, -73.0, 0.01), "lon {}", g.lon);
         assert!(near(g.lat, 41.5, 0.01), "lat {}", g.lat);
-        // 6-char subsquare narrows the cell and stays inside the 4-char square.
+        // 6-char subsquare narrows the cell to an exact center inside the square.
         let s = grid_to_lonlat("DN70KA").unwrap();
         assert!(s.lon_size < 0.1 && s.lat_size < 0.05);
-        assert!(near(s.lon, -105.0, 1.0) && near(s.lat, 40.0, 0.5));
+        assert!(near(s.lon, -105.125, 0.001), "lon {}", s.lon);
+        assert!(near(s.lat, 40.0208, 0.001), "lat {}", s.lat);
+        // 8-char extended locators decode to 6-char precision (tail ignored).
+        let e = grid_to_lonlat("DN70KA12").unwrap();
+        assert!(near(e.lon, s.lon, 1e-6) && near(e.lat, s.lat, 1e-6));
+        // Case-insensitive: lowercase field/subsquare letters decode identically.
+        assert_eq!(grid_to_lonlat("fn31").unwrap().lon, grid_to_lonlat("FN31").unwrap().lon);
     }
 
     #[test]
     fn grid_rejects_malformed() {
-        for bad in ["", "F", "FN3", "FN3X", "FN311", "ZZ99", "F931"] {
+        // Includes a 6-char with an out-of-range subsquare letter (Z = 25, valid is A..X).
+        for bad in ["", "F", "FN3", "FN3X", "FN311", "ZZ99", "F931", "FN31ZZ"] {
             assert!(grid_to_lonlat(bad).is_none(), "expected None for {bad:?}");
         }
     }

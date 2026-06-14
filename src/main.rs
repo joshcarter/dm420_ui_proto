@@ -609,9 +609,13 @@ fn draw_contacts(
 }
 
 /// Composite a translucent foreground over an opaque background → opaque color.
+/// `fg`'s channels are already alpha-weighted (egui `Color32` is premultiplied),
+/// so only the background is scaled by `(1 − a)`. Requires `bg` fully opaque
+/// (`bg.a() == 255`); a translucent `bg` would drop its alpha and mis-tint.
 fn over(fg: Color32, bg: Color32) -> Color32 {
+    debug_assert_eq!(bg.a(), 255, "over() requires an opaque background");
     let a = fg.a() as f32 / 255.0;
-    let m = |f: u8, b: u8| (f as f32 * a + b as f32 * (1.0 - a)).round() as u8;
+    let m = |f: u8, b: u8| (f as f32 + b as f32 * (1.0 - a)).round().min(255.0) as u8;
     Color32::from_rgb(m(fg.r(), bg.r()), m(fg.g(), bg.g()), m(fg.b(), bg.b()))
 }
 
@@ -1006,6 +1010,9 @@ impl eframe::App for App {
             self.brushed_is_dark = self.dark;
         }
         let brushed = self.brushed.clone().unwrap();
+        // Relief is theme-independent (unlike `brushed`), so a one-time lazy build
+        // suffices — no dark-mode guard needed. load_texture is synchronous, so the
+        // Some(..) set below is always visible to the unwrap on the next line.
         if self.relief.is_none() {
             self.relief = Some(make_relief(&ctx));
         }

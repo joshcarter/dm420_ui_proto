@@ -9,6 +9,7 @@ Setup: pip install pillow scipy numpy ; fetch a global equirectangular gray DEM:
   curl -sLo /tmp/gebco.png https://eoimages.gsfc.nasa.gov/images/imagerecords/73000/73934/gebco_08_rev_elev_21600x10800.png
 Run: python3 tools/gen_relief.py
 """
+from pathlib import Path
 import numpy as np
 from PIL import Image
 from scipy.ndimage import gaussian_filter
@@ -60,6 +61,6 @@ fy = smoothstep(np.minimum(np.arange(h), h - 1 - np.arange(h)) / by)
 fx = smoothstep(np.minimum(np.arange(w), w - 1 - np.arange(w)) / bx)
 relief = 1.0 - (1.0 - relief) * np.outer(fy, fx)
 img = Image.fromarray((relief * 255).astype(np.uint8), mode="L")
-img.save("/home/josh/Projects/dm420_ui_proto/assets/relief.png")
+img.save(Path(__file__).resolve().parents[1] / "assets" / "relief.png")
 print(f"// relief box: LON {LON0}..{LON1}, LAT {LAT0}..{LAT1}")
 print(f"// wrote assets/relief.png ({OUT_W}x{out_h})")
