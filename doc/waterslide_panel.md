@@ -60,11 +60,5 @@ overlapping with another signal. Thus the packing of text vertically
 will have to be approximate. The waterslide panel should make a best
 effort to keep decoded text next to their signal.
 
-On the very right end of the graph there should be an indicator of the
-current frequency (at center) and above will have plus and minus
-values for the number of hertz. A typical audiopassband will be 2400
-to 3000Hz, so the graph might show 14.074MHz for its center, +500,
-+1000, +1500 Hz above and -500, -1000, -1500 Hz below. This indicator
-does not need to be large, however.
-
-
+Note: this panel UI could be extended to show PSK31, RTTY, and other
+digital radio traffic.
